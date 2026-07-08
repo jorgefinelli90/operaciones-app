@@ -1,5 +1,7 @@
 'use client'
-
+import { parseCSV } from "@/lib/csv/parser";
+import { validateCSV } from "@/lib/csv/validator";
+import { mapOrders } from "@/lib/csv/mapper";
 import { useState } from 'react'
 import { Upload, X, Download } from 'lucide-react'
 
@@ -18,54 +20,7 @@ export function CSVUploader({ onDataLoaded, requiredHeaders }: CSVUploaderProps)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const parseCSV = (content: string): CSVData => {
-    const lines = content.trim().split('\n')
-    if (lines.length === 0) throw new Error('El archivo CSV está vacío')
-
-    // Parsear headers
-    const headerLine = lines[0]
-    const headers = headerLine.split(',').map((h) => h.trim().replace(/^"(.*)"$/, '$1'))
-
-    // Parsear filas
-    const rows: Record<string, string>[] = []
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]
-      if (!line.trim()) continue
-
-      // Separar por comas, respetando comillas
-      const values: string[] = []
-      let current = ''
-      let inQuotes = false
-
-      for (let j = 0; j < line.length; j++) {
-        const char = line[j]
-        const nextChar = line[j + 1]
-
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            current += '"'
-            j++
-          } else {
-            inQuotes = !inQuotes
-          }
-        } else if (char === ',' && !inQuotes) {
-          values.push(current.trim().replace(/^"(.*)"$/, '$1'))
-          current = ''
-        } else {
-          current += char
-        }
-      }
-      values.push(current.trim().replace(/^"(.*)"$/, '$1'))
-
-      const row: Record<string, string> = {}
-      headers.forEach((header, index) => {
-        row[header] = values[index] || ''
-      })
-      rows.push(row)
-    }
-
-    return { headers, rows }
-  }
+  
 
   const handleFile = (file: File) => {
     setError(null)
