@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Plataforma de gestión de operaciones de comercio electrónico',
   generator: 'v0.app',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.svg',
   },
 }
 
@@ -24,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body className="antialiased bg-background text-foreground">
+    <html lang="es" className="dark" suppressHydrationWarning>
+      <body className="antialiased bg-background text-foreground" suppressHydrationWarning>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

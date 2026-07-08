@@ -11,4 +11,7 @@ export interface OrderImport {
   warehouseStatus: string;
   trackingNumber: string | null;
   grandTotal: number;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryProvince: string;
 }

@@ -1,29 +1,29 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { Sidebar } from '@/components/sidebar'
-import { TopBar } from '@/components/topbar'
-import { CSVUploader } from '@/components/csv-uploader'
-import { getOrders } from '@/lib/orders/getOrders'
-import type { Order } from '@/types/order'
-import { formatDate } from '@/lib/utils/date'
-import { ChevronDown, Search, Filter, ChevronRight } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { Sidebar } from "@/components/sidebar";
+import { TopBar } from "@/components/topbar";
+import { CSVUploader } from "@/components/csv-uploader";
+import { getOrders } from "@/lib/orders/getOrders";
+import type { Order } from "@/types/order";
+import { formatDate } from "@/lib/utils/date";
+import { ChevronDown, Search, Filter, ChevronRight } from "lucide-react";
 
 const statusColors = {
-  pendiente: 'bg-yellow-500/10 text-yellow-400',
-  despachado: 'bg-blue-500/10 text-blue-400',
-  enviado: 'bg-green-500/10 text-green-400',
-  producto_faltante: 'bg-red-500/10 text-red-400',
-  devuelto: 'bg-orange-500/10 text-orange-400',
-  cambio: 'bg-purple-500/10 text-purple-400',
-}
+  pendiente: "bg-yellow-500/10 text-yellow-400",
+  despachado: "bg-blue-500/10 text-blue-400",
+  enviado: "bg-green-500/10 text-green-400",
+  producto_faltante: "bg-red-500/10 text-red-400",
+  devuelto: "bg-orange-500/10 text-orange-400",
+  cambio: "bg-purple-500/10 text-purple-400",
+};
 
 function shortShipping(shipping: string) {
   if (!shipping) {
     return {
       title: "-",
       subtitle: "",
-    }
+    };
   }
 
   if (shipping.includes("Andreani")) {
@@ -31,60 +31,68 @@ function shortShipping(shipping: string) {
       return {
         title: "Andreani",
         subtitle: "Retiro sucursal",
-      }
+      };
     }
 
     return {
       title: "Andreani",
       subtitle: "Domicilio",
-    }
+    };
   }
 
   if (shipping.toLowerCase().includes("treggo")) {
     return {
       title: "Treggo",
       subtitle: "Same / Next Day",
-    }
+    };
   }
 
   if (shipping.includes("Retiro en tienda")) {
-    const local = shipping.split("-").pop()?.trim() ?? ""
+    const local = shipping.split("-").pop()?.trim() ?? "";
 
     return {
       title: "Retiro tienda",
       subtitle: local,
-    }
+    };
   }
 
   return {
     title: shipping,
     subtitle: "",
-  }
+  };
 }
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    status: 'all',
-    warehouse: 'all',
-  })
-  const [showCSVUploader, setShowCSVUploader] = useState(false)
+    status: "all",
+    warehouse: "all",
+  });
+  const [showCSVUploader, setShowCSVUploader] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const data = await getOrders(50)
-      setOrders(data)
-      setLoading(false)
+      const data = await getOrders(50);
+      setOrders(data);
+      setLoading(false);
     }
-    load()
-  }, [])
+    load();
+  }, []);
 
   const filteredOrders = orders.filter((order) => {
-    if (filters.status !== 'all' && order.warehouse_status.toLowerCase() !== filters.status) return false
-    if (filters.warehouse !== 'all' && (order as Order & { warehouse?: string }).warehouse !== filters.warehouse) return false
-    return true
-  })
+    if (
+      filters.status !== "all" &&
+      order.warehouse_status.toLowerCase() !== filters.status
+    )
+      return false;
+    if (
+      filters.warehouse !== "all" &&
+      (order as Order & { warehouse?: string }).warehouse !== filters.warehouse
+    )
+      return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,13 +105,15 @@ export default function OrdersPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Pedidos</h1>
-            <p className="text-muted-foreground mt-1">Gestiona y realiza el seguimiento de todos los pedidos</p>
+            <p className="text-muted-foreground mt-1">
+              Gestiona y realiza el seguimiento de todos los pedidos
+            </p>
           </div>
           <button
             onClick={() => setShowCSVUploader(!showCSVUploader)}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
           >
-            {showCSVUploader ? 'Cancelar' : 'Cargar CSV'}
+            {showCSVUploader ? "Cancelar" : "Cargar CSV"}
           </button>
         </div>
 
@@ -111,7 +121,7 @@ export default function OrdersPage() {
         {showCSVUploader && (
           <CSVUploader
             onDataLoaded={(orders) => {
-              console.log('CSV cargado:', orders)
+              console.log("CSV cargado:", orders);
             }}
           />
         )}
@@ -121,7 +131,9 @@ export default function OrdersPage() {
           <div className="relative">
             <select
               value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, status: e.target.value })
+              }
               className="appearance-none rounded-lg border border-border bg-input px-4 py-2 pr-10 text-sm font-medium text-foreground cursor-pointer hover:border-primary/30 transition-colors"
             >
               <option value="all">Todos los estados</option>
@@ -138,7 +150,9 @@ export default function OrdersPage() {
           <div className="relative">
             <select
               value={filters.warehouse}
-              onChange={(e) => setFilters({ ...filters, warehouse: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, warehouse: e.target.value })
+              }
               className="appearance-none rounded-lg border border-border bg-input px-4 py-2 pr-10 text-sm font-medium text-foreground cursor-pointer hover:border-primary/30 transition-colors"
             >
               <option value="all">Pickups</option>
@@ -160,83 +174,96 @@ export default function OrdersPage() {
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur">
-  <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-    <div>Pedido</div>
-    <div>Cliente</div>
-    <div>Fecha</div>
-    <div>Envío</div>
-    <div>Estado</div>
-    <div className="text-right">Importe</div>
-    <div />
-  </div>
-</div>
+            <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <div>Pedido</div>
+              <div>Cliente</div>
+              <div>Fecha</div>
+              <div>Envío</div>
+              <div>Dirección</div>
+              <div>Estado</div>
+              <div className="text-right">Importe</div>
+              <div />
+            </div>
+          </div>
 
           {/* Order Rows */}
           <div className="divide-y divide-border max-h-96 overflow-y-auto">
             {filteredOrders.map((order) => (
               <div
-              key={order.id}
-              className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40"
-            >
-              <div>
-                <p className="font-semibold text-primary">
-                  {order.id}
-                </p>
+                key={order.id}
+                className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40"
+              >
+                <div>
+                  <p className="font-semibold text-primary">{order.id}</p>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">
+                    {order.customer_name}
+                  </p>
+
+                  <p className="truncate text-xs text-muted-foreground">
+                    {order.customer_email}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-medium">
+                    {formatDate(order.purchase_date).split(" ")[0]}
+                  </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(order.purchase_date).split(" ")[1]}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-medium">
+                    {shortShipping(order.shipping_method).title}
+                  </p>
+
+                  <p className="truncate text-xs text-muted-foreground">
+                    {shortShipping(order.shipping_method).subtitle}
+                  </p>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate font-medium">
+                    {order.delivery_address}
+                  </p>
+
+                  <p className="truncate text-xs text-muted-foreground">
+                    {order.delivery_city}
+                  </p>
+
+                  <p className="truncate text-xs text-muted-foreground">
+                    {order.delivery_province}
+                  </p>
+                </div>
+
+                <div>
+                  <span
+                    className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
+                      statusColors[
+                        order.warehouse_status.toLowerCase() as keyof typeof statusColors
+                      ]
+                    }`}
+                  >
+                    {order.warehouse_status}
+                  </span>
+                </div>
+
+                <div className="text-right font-semibold tabular-nums">
+                  {new Intl.NumberFormat("es-AR", {
+                    style: "currency",
+                    currency: "ARS",
+                  }).format(order.grand_total)}
+                </div>
+
+                <div className="flex justify-center">
+                  <ChevronRight className="h-5 w-5 text-primary" />
+                </div>
               </div>
-            
-              <div className="min-w-0">
-                <p className="truncate font-semibold">
-                  {order.customer_name}
-                </p>
-            
-                <p className="truncate text-xs text-muted-foreground">
-                  {order.customer_email}
-                </p>
-              </div>
-            
-              <div>
-                <p className="font-medium">
-                  {formatDate(order.purchase_date).split(" ")[0]}
-                </p>
-            
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(order.purchase_date).split(" ")[1]}
-                </p>
-              </div>
-            
-              <div>
-                <p className="font-medium">
-                  {shortShipping(order.shipping_method).title}
-                </p>
-            
-                <p className="truncate text-xs text-muted-foreground">
-                  {shortShipping(order.shipping_method).subtitle}
-                </p>
-              </div>
-            
-              <div>
-                <span
-                  className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
-                    statusColors[
-                      order.warehouse_status.toLowerCase() as keyof typeof statusColors
-                    ]
-                  }`}
-                >
-                  {order.warehouse_status}
-                </span>
-              </div>
-            
-              <div className="text-right font-semibold tabular-nums">
-                {new Intl.NumberFormat("es-AR", {
-                  style: "currency",
-                  currency: "ARS",
-                }).format(order.grand_total)}
-              </div>
-            
-              <div className="flex justify-center">
-                <ChevronRight className="h-5 w-5 text-primary" />
-              </div>
-            </div>
             ))}
           </div>
         </div>
@@ -257,5 +284,5 @@ export default function OrdersPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

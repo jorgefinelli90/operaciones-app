@@ -9,6 +9,9 @@ export interface Order {
   warehouse_status: string;
   tracking_number: string | null;
   grand_total: number;
+  delivery_address: string;
+  delivery_city: string;
+  delivery_province: string;
   created_at: string;
   updated_at: string;
 }
