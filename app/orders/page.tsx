@@ -7,7 +7,10 @@ import { CSVUploader } from "@/components/csv-uploader";
 import { getOrders } from "@/lib/orders/getOrders";
 import type { Order } from "@/types/order";
 import { formatDate } from "@/lib/utils/date";
-import { ChevronDown, Search, Filter, ChevronRight } from "lucide-react";
+import { ChevronDown, Search, Filter, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+type SortKey = "id" | "customer_name" | "purchase_date" | "grand_total" | "warehouse_status" | null;
+type SortDirection = "asc" | "desc" | null;
 
 const statusColors = {
   pendiente: "bg-yellow-500/10 text-yellow-400",
@@ -70,6 +73,22 @@ export default function OrdersPage() {
     warehouse: "all",
   });
   const [showCSVUploader, setShowCSVUploader] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortKey(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -80,7 +99,7 @@ export default function OrdersPage() {
     load();
   }, []);
 
-  const filteredOrders = orders.filter((order) => {
+  let filteredOrders = orders.filter((order) => {
     if (
       filters.status !== "all" &&
       order.warehouse_status.toLowerCase() !== filters.status
@@ -93,6 +112,30 @@ export default function OrdersPage() {
       return false;
     return true;
   });
+
+  // Apply sorting
+  if (sortKey && sortDirection) {
+    filteredOrders = [...filteredOrders].sort((a, b) => {
+      let aValue: any = a[sortKey];
+      let bValue: any = b[sortKey];
+
+      // Handle different data types
+      if (sortKey === "grand_total") {
+        aValue = parseFloat(aValue) || 0;
+        bValue = parseFloat(bValue) || 0;
+      } else if (sortKey === "purchase_date") {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      } else if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,111 +214,199 @@ export default function OrdersPage() {
         </div>
 
         {/* Orders Table */}
-        <div className="space-y-3 max-h-[calc(100vh-350px)] overflow-y-auto pr-2">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className="group relative bg-gradient-to-br from-card to-card/95 border border-border rounded-lg p-5 transition-all duration-200 hover:shadow-md hover:border-primary/50 hover:bg-gradient-to-br hover:from-card hover:to-card/85 cursor-pointer"
-              >
-                {/* Top Row - Order ID, Customer, and Amount */}
-                <div className="flex items-start justify-between mb-4 gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-sm">
-                        {order.id.slice(-2)}
-                      </span>
-                      <p className="text-sm font-semibold text-muted-foreground">
-                        {order.id}
-                      </p>
-                    </div>
-                    <p className="text-base font-semibold text-foreground truncate">
-                      {order.customer_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {order.customer_email}
-                    </p>
-                  </div>
-
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-2xl font-bold text-primary tabular-nums">
-                      {new Intl.NumberFormat("es-AR", {
-                        style: "currency",
-                        currency: "ARS",
-                      }).format(order.grand_total)}
-                    </p>
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold mt-2 ${
-                        statusColors[
-                          order.warehouse_status.toLowerCase() as keyof typeof statusColors
-                        ]
-                      }`}
+        <div className="rounded-lg border border-border overflow-hidden bg-card/50 backdrop-blur">
+          {/* Table Header */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30 hover:bg-secondary/40 transition-colors">
+                  <th className="px-6 py-4 text-left">
+                    <button
+                      onClick={() => handleSort("id")}
+                      className="flex items-center gap-2 font-semibold text-sm text-muted-foreground hover:text-foreground transition-colors group"
                     >
-                      {order.warehouse_status}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-border/50 mb-4" />
-
-                {/* Bottom Row - Details Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Date */}
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Pedido
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortKey === "id" ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-4 w-4 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </span>
+                    </button>
+                  </th>
+                  <th className="px-6 py-4 text-left">
+                    <button
+                      onClick={() => handleSort("customer_name")}
+                      className="flex items-center gap-2 font-semibold text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                    >
+                      Cliente
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortKey === "customer_name" ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-4 w-4 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </span>
+                    </button>
+                  </th>
+                  <th className="px-6 py-4 text-left">
+                    <button
+                      onClick={() => handleSort("purchase_date")}
+                      className="flex items-center gap-2 font-semibold text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                    >
                       Fecha
-                    </p>
-                    <p className="text-sm font-medium text-foreground">
-                      {formatDate(order.purchase_date).split(" ")[0]}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(order.purchase_date).split(" ")[1]}
-                    </p>
-                  </div>
-
-                  {/* Shipping */}
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                      Envío
-                    </p>
-                    <p className="text-sm font-medium text-foreground">
-                      {shortShipping(order.shipping_method).title}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {shortShipping(order.shipping_method).subtitle}
-                    </p>
-                  </div>
-
-                  {/* Address */}
-                  <div className="min-w-0 col-span-2 md:col-span-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                      Dirección
-                    </p>
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {order.delivery_address}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {order.delivery_city}, {order.delivery_province}
-                    </p>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="flex items-end justify-end col-span-2 md:col-span-1">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight className="h-5 w-5" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-muted-foreground font-medium">
-                No hay pedidos que coincidan con los filtros
-              </p>
-            </div>
-          )}
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortKey === "purchase_date" ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-4 w-4 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </span>
+                    </button>
+                  </th>
+                  <th className="px-6 py-4 text-left">
+                    <span className="font-semibold text-sm text-muted-foreground">Envío</span>
+                  </th>
+                  <th className="px-6 py-4 text-left">
+                    <span className="font-semibold text-sm text-muted-foreground">Dirección</span>
+                  </th>
+                  <th className="px-6 py-4 text-left">
+                    <button
+                      onClick={() => handleSort("warehouse_status")}
+                      className="flex items-center gap-2 font-semibold text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                    >
+                      Estado
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortKey === "warehouse_status" ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-4 w-4 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </span>
+                    </button>
+                  </th>
+                  <th className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => handleSort("grand_total")}
+                      className="flex items-center justify-end gap-2 font-semibold text-sm text-muted-foreground hover:text-foreground transition-colors group ml-auto"
+                    >
+                      Importe
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {sortKey === "grand_total" ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-4 w-4 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-4 w-4 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </span>
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredOrders.length > 0 ? (
+                  filteredOrders.map((order) => (
+                    <tr
+                      key={order.id}
+                      className="hover:bg-secondary/20 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-xs font-mono">
+                          {order.id.slice(-2)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">
+                            {order.customer_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {order.customer_email}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-foreground">
+                          {formatDate(order.purchase_date).split(" ")[0]}
+                          <br />
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(order.purchase_date).split(" ")[1]}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-foreground">
+                          {shortShipping(order.shipping_method).title}
+                          <br />
+                          <span className="text-xs text-muted-foreground">
+                            {shortShipping(order.shipping_method).subtitle}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-foreground min-w-0">
+                          <p className="truncate">{order.delivery_address}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {order.delivery_city}, {order.delivery_province}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                            statusColors[
+                              order.warehouse_status.toLowerCase() as keyof typeof statusColors
+                            ]
+                          }`}
+                        >
+                          {order.warehouse_status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-semibold text-sm text-foreground tabular-nums">
+                            {new Intl.NumberFormat("es-AR", {
+                              style: "currency",
+                              currency: "ARS",
+                            }).format(order.grand_total)}
+                          </p>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-16 text-center">
+                      <p className="text-muted-foreground font-medium">
+                        No hay pedidos que coincidan con los filtros
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Pagination */}
