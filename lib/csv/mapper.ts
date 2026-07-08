@@ -1,33 +1,24 @@
-export interface OrderImport {
-  id: string;
-  purchaseDate: string | null;
-  customerName: string;
-  customerEmail: string;
-  shippingMethod: string;
-  paymentMethod: string;
-  magentoStatus: string;
-  warehouseStatus: string;
-  trackingNumber: string | null;
-  grandTotal: number;
-}
+import type { OrderImport } from "@/lib/types/orders";
+import { parsePurchaseDate } from "@/lib/utils/date";
 
 function parseCurrency(value: string): number {
-  if (!value) return 0;
+    if (!value) return 0;
+  
+    return parseFloat(
+      value
+        .replace("$", "")
+        .replace(/,/g, "")
+        .trim()
+    );
+  }
+  
 
-  return Number(
-    value
-      .replace(/\$/g, "")
-      .replace(/\./g, "")
-      .replace(",", ".")
-      .trim()
-  );
-}
 
 export function mapOrders(rows: Record<string, string>[]): OrderImport[] {
   return rows.map((row) => ({
     id: row["ID"]?.trim(),
 
-    purchaseDate: row["Purchase Date"] || null,
+    purchaseDate: parsePurchaseDate(row["Purchase Date"]),
 
     customerName: row["Customer Name"]?.trim() || "",
 

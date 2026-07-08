@@ -1,109 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { TopBar } from '@/components/topbar'
 import { CSVUploader } from '@/components/csv-uploader'
+import { getOrders } from '@/lib/orders/getOrders'
+import type { Order } from '@/types/order'
+import { formatDate } from '@/lib/utils/date'
 import { ChevronDown, Search, Filter, ChevronRight } from 'lucide-react'
-
-const orders = [
-  {
-    id: 'B-000049339',
-    date: '2026-07-06 10:16:06',
-    customer: 'Guido Orioli',
-    email: 'guidoorioliab@gmail.com',
-    phone: '',
-    method: 'Tarjeta de crédito/débito',
-    warehouse: '',
-    shipping: 'Andreani - Envío a domicilio (48hs a 72hs)',
-    tracking: '',
-    assigned: '',
-    updated: '',
-    status: 'processing',
-    amount: '$246.638',
-    address: 'Ascasubi 472, Bell Ville, Córdoba 2550',
-  },
-  {
-    id: 'B-000049338',
-    date: '2026-07-06 02:35:34',
-    customer: 'Pablo R Rivas',
-    email: 'pablorivasok@gmail.com',
-    phone: '',
-    method: 'Tarjeta de crédito/débito',
-    warehouse: '',
-    shipping: 'Treggo - Same Day / Next Day',
-    tracking: '',
-    assigned: '',
-    updated: '',
-    status: 'complete',
-    amount: '$188.595,20',
-    address: 'Pantaleon Rivarola 2451 21, CABA 1417',
-  },
-  {
-    id: 'B-000049337',
-    date: '2026-07-06 00:34:03',
-    customer: 'Juan Lupinucci',
-    email: 'dia.lupinuccijuan2@gmail.com',
-    phone: '',
-    method: 'Transferencia bancaria - 15% descuento',
-    warehouse: 'Alcorta Shopping',
-    shipping: 'Retiro en tienda - Alcorta Shopping',
-    tracking: '',
-    assigned: '',
-    updated: '',
-    status: 'complete',
-    amount: '$152.991',
-    address: 'Paunero 2865 8 A, CABA 1425',
-  },
-  {
-    id: 'B-000049336',
-    date: '2026-07-06 00:07:00',
-    customer: 'Juan Lupinucci',
-    email: 'dia.lupinuccijuan2@gmail.com',
-    phone: '',
-    method: 'Transferencia bancaria - 15% descuento',
-    warehouse: 'Alcorta Shopping',
-    shipping: 'Retiro en tienda - Alcorta Shopping',
-    tracking: '',
-    assigned: '',
-    updated: '',
-    status: 'canceled',
-    amount: '$152.991',
-    address: 'Paunero 2865 8 A, CABA 1425',
-  },
-  {
-    id: 'B-000049335',
-    date: '2026-07-05 23:59:19',
-    customer: 'Jorge Rocha',
-    email: 'jorgerochapadilla@gmail.com',
-    phone: '',
-    method: 'Transferencia bancaria - 15% descuento',
-    warehouse: 'Unicenter Shopping',
-    shipping: 'Retiro en tienda - Unicenter Shopping',
-    tracking: '',
-    assigned: '',
-    updated: '',
-    status: 'canceled',
-    amount: '$84.745',
-    address: 'Ventura Bosch 7223, Liniers, Buenos Aires 1408',
-  },
-  {
-    id: 'B-000049334',
-    date: '2026-07-05 23:54:30',
-    customer: 'Anabella Kleiman',
-    email: 'kleimanabella@gmail.com',
-    phone: '',
-    method: 'Transferencia bancaria - 15% descuento',
-    warehouse: '',
-    shipping: 'Treggo - Envío a domicilio',
-    tracking: '',
-    assigned: '',
-    updated: '',
-    status: 'complete',
-    amount: '$35.509',
-    address: 'La Pampa 2975 10 01, CABA',
-  },
-];
 
 const statusColors = {
   pendiente: 'bg-yellow-500/10 text-yellow-400',
@@ -114,29 +18,71 @@ const statusColors = {
   cambio: 'bg-purple-500/10 text-purple-400',
 }
 
-const CSV_REQUIRED_HEADERS = [
-  'ID',
-  'Purchase Date',
-  'Bill-to Name',
-  'Grand Total (Base)',
-  'Status',
-  'Billing Address',
-  'Shipping Information',
-  'Customer Email',
-  'Payment Method',
-  'Pickup Store Name',
-]
+function shortShipping(shipping: string) {
+  if (!shipping) {
+    return {
+      title: "-",
+      subtitle: "",
+    }
+  }
+
+  if (shipping.includes("Andreani")) {
+    if (shipping.includes("Retiro en sucursal")) {
+      return {
+        title: "Andreani",
+        subtitle: "Retiro sucursal",
+      }
+    }
+
+    return {
+      title: "Andreani",
+      subtitle: "Domicilio",
+    }
+  }
+
+  if (shipping.toLowerCase().includes("treggo")) {
+    return {
+      title: "Treggo",
+      subtitle: "Same / Next Day",
+    }
+  }
+
+  if (shipping.includes("Retiro en tienda")) {
+    const local = shipping.split("-").pop()?.trim() ?? ""
+
+    return {
+      title: "Retiro tienda",
+      subtitle: local,
+    }
+  }
+
+  return {
+    title: shipping,
+    subtitle: "",
+  }
+}
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     status: 'all',
     warehouse: 'all',
   })
   const [showCSVUploader, setShowCSVUploader] = useState(false)
 
+  useEffect(() => {
+    async function load() {
+      const data = await getOrders(50)
+      setOrders(data)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
   const filteredOrders = orders.filter((order) => {
-    if (filters.status !== 'all' && order.status !== filters.status) return false
-    if (filters.warehouse !== 'all' && order.warehouse !== filters.warehouse) return false
+    if (filters.status !== 'all' && order.warehouse_status.toLowerCase() !== filters.status) return false
+    if (filters.warehouse !== 'all' && (order as Order & { warehouse?: string }).warehouse !== filters.warehouse) return false
     return true
   })
 
@@ -164,9 +110,8 @@ export default function OrdersPage() {
         {/* CSV Uploader Section */}
         {showCSVUploader && (
           <CSVUploader
-            requiredHeaders={CSV_REQUIRED_HEADERS}
-            onDataLoaded={(data) => {
-              console.log('CSV cargado:', data)
+            onDataLoaded={(orders) => {
+              console.log('CSV cargado:', orders)
             }}
           />
         )}
@@ -214,64 +159,84 @@ export default function OrdersPage() {
         {/* Orders Table */}
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           {/* Sticky Header */}
-          <div className="sticky top-0 z-10 bg-secondary/50 border-b border-border">
-            <div className="grid gap-4 px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <div style={{ gridColumn: '1 / span 1' }}>Pedido</div>
-              <div style={{ gridColumn: '2 / span 2' }}>Cliente</div>
-              <div style={{ gridColumn: '4 / span 1' }}>Fecha</div>
-              <div style={{ gridColumn: '5 / span 1' }}>Deposito</div>
-              <div style={{ gridColumn: '6 / span 1' }}>Envio</div>
-              <div style={{ gridColumn: '7 / span 1' }}>Guia</div>
-              <div style={{ gridColumn: '8 / span 1' }}>Usuario</div>
-              <div style={{ gridColumn: '9 / span 1' }}>Estado</div>
-              <div style={{ gridColumn: '10 / span 1' }}>Importe</div>
-              <div style={{ gridColumn: '11 / span 1' }}></div>
-            </div>
-          </div>
+          <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur">
+  <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div>Pedido</div>
+    <div>Cliente</div>
+    <div>Fecha</div>
+    <div>Envío</div>
+    <div>Estado</div>
+    <div className="text-right">Importe</div>
+    <div />
+  </div>
+</div>
 
           {/* Order Rows */}
           <div className="divide-y divide-border max-h-96 overflow-y-auto">
             {filteredOrders.map((order) => (
               <div
-                key={order.id}
-                className="grid gap-4 px-6 py-3 hover:bg-secondary/30 transition-colors cursor-pointer items-center border-l-4 border-l-transparent hover:border-l-primary text-sm"
-              >
-                <div style={{ gridColumn: '1 / span 1' }}>
-                  <span className="font-semibold text-primary">{order.id}</span>
-                </div>
-                <div style={{ gridColumn: '2 / span 2' }}>
-                  <p className="font-medium text-foreground">{order.customer}</p>
-                  <p className="text-xs text-muted-foreground">{order.email}</p>
-                </div>
-                <div style={{ gridColumn: '4 / span 1' }} className="text-muted-foreground">
-                  {order.date}
-                </div>
-                <div style={{ gridColumn: '5 / span 1' }} className="text-foreground">
-                  {order.warehouse}
-                </div>
-                <div style={{ gridColumn: '6 / span 1' }} className="text-foreground">
-                  {order.shipping}
-                </div>
-                <div style={{ gridColumn: '7 / span 1' }} className="text-muted-foreground text-xs font-mono">
-                  {order.tracking}
-                </div>
-                <div style={{ gridColumn: '8 / span 1' }} className="text-foreground">
-                  {order.assigned}
-                </div>
-                <div style={{ gridColumn: '9 / span 1' }}>
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${statusColors[order.status as keyof typeof statusColors]}`}>
-                    {order.status.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-                <div style={{ gridColumn: '10 / span 1' }} className="font-semibold text-foreground">
-                  {order.amount}
-                </div>
-                <div style={{ gridColumn: '11 / span 1' }}>
-                  <button className="p-2 hover:bg-primary/10 rounded transition-colors">
-                    <ChevronRight className="h-4 w-4 text-primary" />
-                  </button>
-                </div>
+              key={order.id}
+              className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40"
+            >
+              <div>
+                <p className="font-semibold text-primary">
+                  {order.id}
+                </p>
               </div>
+            
+              <div className="min-w-0">
+                <p className="truncate font-semibold">
+                  {order.customer_name}
+                </p>
+            
+                <p className="truncate text-xs text-muted-foreground">
+                  {order.customer_email}
+                </p>
+              </div>
+            
+              <div>
+                <p className="font-medium">
+                  {formatDate(order.purchase_date).split(" ")[0]}
+                </p>
+            
+                <p className="text-xs text-muted-foreground">
+                  {formatDate(order.purchase_date).split(" ")[1]}
+                </p>
+              </div>
+            
+              <div>
+                <p className="font-medium">
+                  {shortShipping(order.shipping_method).title}
+                </p>
+            
+                <p className="truncate text-xs text-muted-foreground">
+                  {shortShipping(order.shipping_method).subtitle}
+                </p>
+              </div>
+            
+              <div>
+                <span
+                  className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
+                    statusColors[
+                      order.warehouse_status.toLowerCase() as keyof typeof statusColors
+                    ]
+                  }`}
+                >
+                  {order.warehouse_status}
+                </span>
+              </div>
+            
+              <div className="text-right font-semibold tabular-nums">
+                {new Intl.NumberFormat("es-AR", {
+                  style: "currency",
+                  currency: "ARS",
+                }).format(order.grand_total)}
+              </div>
+            
+              <div className="flex justify-center">
+                <ChevronRight className="h-5 w-5 text-primary" />
+              </div>
+            </div>
             ))}
           </div>
         </div>
