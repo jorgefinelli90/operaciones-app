@@ -1,0 +1,6 @@
+ID,Purchase Date,Bill-to Name,Grand Total (Base),Status,Billing Address,Shipping Information,Customer Email,Payment Method,Pickup Store Name
+B-000049274,Jul 3 2026,Sebastian Martin,424915.0000,Canceled,"Demaria 4537, Buenos Aires","Envío rápido por Treggo",martinsebas@gmail.com,Transferencia bancaria,
+B-000049276,Jul 3 2026,Nahuel Aquino,303259.0000,Canceled,"Bustamante 2450, Buenos Aires","Envío rápido por Treggo",nahuaquino566@gmail.com,Transferencia bancaria,
+B-000049277,Jul 3 2026,Rodrigo Torres,849400.0000,Processing,"Julian Alvarez 1948, Buenos Aires","amt - Retiro en tienda",rodrigo_cid@hotmail.com,Mercadopago,Gurruchaga Store & Coffee Shop
+B-000049278,Jul 3 2026,German Beigelman,75744.0000,Processing,"Quesada 5649, Buenos Aires","Envío rápido por Treggo",germanbeigelman@gmail.com,Tarjeta de crédito,
+B-000049279,Jul 3 2026,Sebastian Martin,303259.0000,Canceled,"Demaria 4537, Buenos Aires","Envío rápido por Treggo",martinsebas@gmail.com,Transferencia bancaria,
