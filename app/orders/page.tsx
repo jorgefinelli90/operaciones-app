@@ -332,7 +332,7 @@ export default function OrdersPage() {
                     >
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-xs font-mono">
-                          {order.id.slice(-2)}
+                          {order.id.slice(2)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
