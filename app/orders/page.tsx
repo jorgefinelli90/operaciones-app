@@ -171,101 +171,111 @@ export default function OrdersPage() {
         </div>
 
         {/* Orders Table */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          {/* Sticky Header */}
-          <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur">
-            <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <div>Pedido</div>
-              <div>Cliente</div>
-              <div>Fecha</div>
-              <div>Envío</div>
-              <div>Dirección</div>
-              <div>Estado</div>
-              <div className="text-right">Importe</div>
-              <div />
-            </div>
-          </div>
-
-          {/* Order Rows */}
-          <div className="divide-y divide-border max-h-96 overflow-y-auto">
-            {filteredOrders.map((order) => (
+        <div className="space-y-3 max-h-[calc(100vh-350px)] overflow-y-auto pr-2">
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
               <div
                 key={order.id}
-                className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40"
+                className="group relative bg-gradient-to-br from-card to-card/95 border border-border rounded-lg p-5 transition-all duration-200 hover:shadow-md hover:border-primary/50 hover:bg-gradient-to-br hover:from-card hover:to-card/85 cursor-pointer"
               >
-                <div>
-                  <p className="font-semibold text-primary">{order.id}</p>
+                {/* Top Row - Order ID, Customer, and Amount */}
+                <div className="flex items-start justify-between mb-4 gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-sm">
+                        {order.id.slice(-2)}
+                      </span>
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        {order.id}
+                      </p>
+                    </div>
+                    <p className="text-base font-semibold text-foreground truncate">
+                      {order.customer_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {order.customer_email}
+                    </p>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-2xl font-bold text-primary tabular-nums">
+                      {new Intl.NumberFormat("es-AR", {
+                        style: "currency",
+                        currency: "ARS",
+                      }).format(order.grand_total)}
+                    </p>
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold mt-2 ${
+                        statusColors[
+                          order.warehouse_status.toLowerCase() as keyof typeof statusColors
+                        ]
+                      }`}
+                    >
+                      {order.warehouse_status}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
-                    {order.customer_name}
-                  </p>
+                {/* Divider */}
+                <div className="h-px bg-border/50 mb-4" />
 
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.customer_email}
-                  </p>
-                </div>
+                {/* Bottom Row - Details Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Date */}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Fecha
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {formatDate(order.purchase_date).split(" ")[0]}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(order.purchase_date).split(" ")[1]}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="font-medium">
-                    {formatDate(order.purchase_date).split(" ")[0]}
-                  </p>
+                  {/* Shipping */}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Envío
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {shortShipping(order.shipping_method).title}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {shortShipping(order.shipping_method).subtitle}
+                    </p>
+                  </div>
 
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(order.purchase_date).split(" ")[1]}
-                  </p>
-                </div>
+                  {/* Address */}
+                  <div className="min-w-0 col-span-2 md:col-span-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Dirección
+                    </p>
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {order.delivery_address}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {order.delivery_city}, {order.delivery_province}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="font-medium">
-                    {shortShipping(order.shipping_method).title}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {shortShipping(order.shipping_method).subtitle}
-                  </p>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {order.delivery_address}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.delivery_city}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.delivery_province}
-                  </p>
-                </div>
-
-                <div>
-                  <span
-                    className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
-                      statusColors[
-                        order.warehouse_status.toLowerCase() as keyof typeof statusColors
-                      ]
-                    }`}
-                  >
-                    {order.warehouse_status}
-                  </span>
-                </div>
-
-                <div className="text-right font-semibold tabular-nums">
-                  {new Intl.NumberFormat("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  }).format(order.grand_total)}
-                </div>
-
-                <div className="flex justify-center">
-                  <ChevronRight className="h-5 w-5 text-primary" />
+                  {/* Action Button */}
+                  <div className="flex items-end justify-end col-span-2 md:col-span-1">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRight className="h-5 w-5" />
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-muted-foreground font-medium">
+                No hay pedidos que coincidan con los filtros
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pagination */}
