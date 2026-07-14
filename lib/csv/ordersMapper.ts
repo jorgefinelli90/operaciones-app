@@ -1,10 +1,11 @@
 import type { OrderImport } from "@/types/orders";
-import { parsePurchaseDate } from "@/lib/utils/date";
 
 function parseCurrency(value: string): number {
   if (!value) return 0;
 
-  return parseFloat(value.replace(/,/g, "").trim());
+  return parseFloat(
+    value.replace(/,/g, "").trim()
+  );
 }
 
 const STATUS_MAP: Record<string, string> = {
@@ -43,10 +44,14 @@ export function mapOrders(
     const magentoStatus =
       row["sales_order_grid.status"]?.trim() || "";
 
+    const purchaseDate = row["created_at"]?.trim();
+
     orders.set(id, {
       id,
 
-      purchaseDate: row["created_at"]?.trim() || null,
+      purchaseDate: purchaseDate
+        ? `${purchaseDate}-03:00`
+        : null,
 
       customerFirstname:
         row["sales_order_shipping_address.firstname"]?.trim() || "",

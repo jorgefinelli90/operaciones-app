@@ -7,9 +7,25 @@ import { CSVUploader } from "@/components/csv/CSVUploader";
 import { getOrders } from "@/lib/orders/getOrders";
 import type { Order } from "@/types/orders";
 import { formatDate } from "@/lib/utils/date";
-import { ChevronDown, Search, Filter, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-
-type SortKey = "id" | "customer_name" | "purchase_date" | "grand_total" | "warehouse_status" | null;
+import { OrdersFilters } from "@/app/orders/OrdersFilters";
+import { OrdersToolbar } from "@/app/orders/OrdersToolbar";
+import {
+  ChevronDown,
+  Search,
+  Filter,
+  ChevronRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
+import { OrdersTable } from "@/app/orders/OrdersTable";
+type SortKey =
+  | "id"
+  | "customer_firstname"
+  | "purchase_date"
+  | "grand_total"
+  | "warehouse_status"
+  | null;
 type SortDirection = "asc" | "desc" | null;
 
 const statusColors = {
@@ -68,6 +84,7 @@ function shortShipping(shipping: string) {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
     status: "all",
     warehouse: "all",
@@ -101,18 +118,75 @@ export default function OrdersPage() {
   }, []);
 
   let filteredOrders = orders.filter((order) => {
-    if (
-      filters.status !== "all" &&
-      order.warehouse_status.toLowerCase() !== filters.status
-    )
-      return false;
-    if (
-      filters.warehouse !== "all" &&
-      (order as Order & { warehouse?: string }).warehouse !== filters.warehouse
-    )
-      return false;
-    return true;
+    const searchText = search.toLowerCase().trim();
+
+    const fullName = `${order.customer_firstname} ${order.customer_lastname}`
+      .toLowerCase()
+      .trim();
+
+    const matchesSearch =
+      searchText === "" ||
+      order.id.toLowerCase().includes(searchText) ||
+      order.customer_firstname.toLowerCase().includes(searchText) ||
+      order.customer_lastname.toLowerCase().includes(searchText) ||
+      fullName.includes(searchText) ||
+      order.customer_email.toLowerCase().includes(searchText);
+
+    const matchesStatus =
+      filters.status === "all" ||
+      order.warehouse_status.toLowerCase() === filters.status;
+
+    const matchesWarehouse = filters.warehouse === "all";
+
+    return matchesSearch && matchesStatus && matchesWarehouse;
   });
+
+  if (sortKey && sortDirection) {
+    filteredOrders = [...filteredOrders].sort((a, b) => {
+      let aValue: unknown;
+      let bValue: unknown;
+
+      switch (sortKey) {
+        case "id":
+          aValue = a.id;
+          bValue = b.id;
+          break;
+
+        case "customer_firstname":
+          aValue = `${a.customer_firstname} ${a.customer_lastname}`;
+          bValue = `${b.customer_firstname} ${b.customer_lastname}`;
+          break;
+
+        case "purchase_date":
+          aValue = new Date(a.purchase_date).getTime();
+          bValue = new Date(b.purchase_date).getTime();
+          break;
+
+        case "grand_total":
+          aValue = a.grand_total;
+          bValue = b.grand_total;
+          break;
+
+        case "warehouse_status":
+          aValue = a.warehouse_status;
+          bValue = b.warehouse_status;
+          break;
+
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase();
+        bValue = (bValue as string).toLowerCase();
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+
+      return 0;
+    });
+  }
 
   // Apply sorting
   if (sortKey && sortDirection) {
@@ -145,21 +219,10 @@ export default function OrdersPage() {
 
       {/* Main Content */}
       <main className="ml-64 mt-16 p-6">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Pedidos</h1>
-            <p className="text-muted-foreground mt-1">
-              Gestiona y realiza el seguimiento de todos los pedidos
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCSVUploader(!showCSVUploader)}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
-          >
-            {showCSVUploader ? "Cancelar" : "Cargar CSV"}
-          </button>
-        </div>
+        <OrdersToolbar
+          showCSVUploader={showCSVUploader}
+          onToggleCSVUploader={() => setShowCSVUploader(!showCSVUploader)}
+        />
 
         {/* CSV Uploader Section */}
         {showCSVUploader && (
@@ -172,146 +235,14 @@ export default function OrdersPage() {
         )}
 
         {/* Filters */}
-        <div className="mb-6 flex gap-3">
-          <div className="relative">
-            <select
-              value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
-              className="appearance-none rounded-lg border border-border bg-input px-4 py-2 pr-10 text-sm font-medium text-foreground cursor-pointer hover:border-primary/30 transition-colors"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="despachado">Despachado</option>
-              <option value="enviado">Enviado</option>
-              <option value="producto_faltante">Producto Faltante</option>
-              <option value="devuelto">Devuelto a deposito</option>
-              <option value="cambio">Cambio</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none text-muted-foreground" />
-          </div>
+        <OrdersFilters
+          search={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
 
-          <div className="relative">
-            <select
-              value={filters.warehouse}
-              onChange={(e) =>
-                setFilters({ ...filters, warehouse: e.target.value })
-              }
-              className="appearance-none rounded-lg border border-border bg-input px-4 py-2 pr-10 text-sm font-medium text-foreground cursor-pointer hover:border-primary/30 transition-colors"
-            >
-              <option value="all">Pickups</option>
-              <option value="Madrid">Palermo</option>
-              <option value="Barcelona">Unicenter</option>
-              <option value="Valencia">Alcorta</option>
-              <option value="Seville">Arcos</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none text-muted-foreground" />
-          </div>
-
-          <button className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 hover:bg-secondary transition-colors text-sm font-medium">
-            <Filter className="h-4 w-4" />
-            Mas filtros
-          </button>
-        </div>
-
-        {/* Orders Table */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          {/* Sticky Header */}
-          <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur">
-            <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <div>Pedido</div>
-              <div>Cliente</div>
-              <div>Fecha</div>
-              <div>Envío</div>
-              <div>Dirección</div>
-              <div>Estado</div>
-              <div className="text-right">Importe</div>
-              <div />
-            </div>
-          </div>
-
-          {/* Order Rows */}
-          <div className="divide-y divide-border max-h-96 overflow-y-auto">
-            {filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40"
-              >
-                <div>
-                  <p className="font-semibold text-primary">{order.id}</p>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
-                    {order.customer_name}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.customer_email}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="font-medium">
-                    {formatDate(order.purchase_date).split(" ")[0]}
-                  </p>
-
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(order.purchase_date).split(" ")[1]}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="font-medium">
-                    {shortShipping(order.shipping_method).title}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {shortShipping(order.shipping_method).subtitle}
-                  </p>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {order.delivery_address}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.delivery_city}
-                  </p>
-
-                  <p className="truncate text-xs text-muted-foreground">
-                    {order.delivery_province}
-                  </p>
-                </div>
-
-                <div>
-                  <span
-                    className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
-                      statusColors[
-                        order.warehouse_status.toLowerCase() as keyof typeof statusColors
-                      ]
-                    }`}
-                  >
-                    {order.warehouse_status}
-                  </span>
-                </div>
-
-                <div className="text-right font-semibold tabular-nums">
-                  {new Intl.NumberFormat("es-AR", {
-                    style: "currency",
-                    currency: "ARS",
-                  }).format(order.grand_total)}
-                </div>
-
-                <div className="flex justify-center">
-                  <ChevronRight className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <OrdersTable orders={filteredOrders} />
 
         {/* Pagination */}
         <div className="mt-6 flex items-center justify-between">
