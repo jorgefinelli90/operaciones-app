@@ -4,12 +4,18 @@ export function parseCSV(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     Papa.parse<Record<string, string>>(file, {
       header: true,
+      delimiter: ";",
       skipEmptyLines: true,
       transformHeader: (header) => header.trim(),
 
       complete: (results) => {
-        if (results.errors.length > 0) {
-          reject(results.errors);
+        const fatalErrors = results.errors.filter(
+          (error) => error.code !== "TooFewFields",
+        );
+
+        if (fatalErrors.length > 0) {
+          console.error(fatalErrors);
+          reject(new Error("Error leyendo el archivo CSV."));
           return;
         }
 

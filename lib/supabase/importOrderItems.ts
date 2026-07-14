@@ -14,17 +14,31 @@ export async function importOrderItems(
     };
   }
 
+  const rows = items.map((item) => ({
+    order_id: item.orderId,
+    sku: item.sku,
+    product_name: item.productName,
+    qty: item.qty,
+    price: item.price,
+    product_type: item.productType,
+  }));
+  console.log(rows[0]);
   const { error } = await supabase
     .from("order_items")
-    .upsert(items, {
+    .upsert(rows, {
       onConflict: "order_id,sku",
     });
 
   if (error) {
-    throw error;
-  }
+  console.log("POSTGREST ERROR");
+  console.log(JSON.stringify(error, null, 2));
+
+  throw new Error(
+    `${error.code} - ${error.message} - ${error.details} - ${error.hint}`
+  );
+}
 
   return {
-    inserted: items.length,
+    inserted: rows.length,
   };
 }

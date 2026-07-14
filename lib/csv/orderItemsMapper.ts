@@ -1,48 +1,63 @@
 import type { OrderItem } from "@/types/orderItem";
 
-function parseNumber(value: string): number {
+function parseNumber(value?: string): number {
   if (!value) return 0;
 
-  return parseFloat(
-    value
-      .replace(/,/g, "")
-      .trim()
+  const number = Number(
+    value.replace(/,/g, "").trim()
   );
+
+  return Number.isNaN(number) ? 0 : number;
 }
 
 export function mapOrderItems(
   rows: Record<string, string>[]
 ): OrderItem[] {
+
   const items: OrderItem[] = [];
 
-  for (const row of rows) {
-    const productType =
-      row["sales_order_item.product_type"]?.trim().toLowerCase();
+  let currentOrderId = "";
 
-    // Ignorar productos simples
+  for (const row of rows) {
+
+    if (row["increment_id"]?.trim()) {
+      currentOrderId = row["increment_id"].trim();
+    }
+
+    const productType =
+      row["sales_order_item.product_type"]
+        ?.trim()
+        .toLowerCase();
+
     if (productType !== "configurable") {
       continue;
     }
 
     items.push({
-      orderId: row["increment_id"]?.trim() || "",
+      orderId: currentOrderId,
 
-      sku: row["sales_order_item.sku"]?.trim() || "",
+      sku:
+        row["sales_order_item.sku"]?.trim() || "",
 
       productName:
         row["sales_order_item.name"]?.trim() || "",
 
       qty: parseNumber(
-        row["sales_order_item.qty_ordered"] || "0"
+        row["sales_order_item.qty_ordered"]
       ),
 
       price: parseNumber(
-        row["sales_order_item.price"] || "0"
+        row["sales_order_item.price"]
       ),
 
-      productType,
+      productType: "configurable",
     });
+
   }
 
-  return items;
+  return items.filter(
+    item =>
+      item.orderId !== "" &&
+      item.sku !== ""
+  );
 }

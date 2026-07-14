@@ -38,9 +38,14 @@ export function CSVUploader({
     setError(null);
 
     try {
+      console.log("========== CSV ==========");
+      console.log("Archivo:", file.name);
+
       const rows = await parseCSV(file);
+      console.log("ROWS", rows);
 
       const validation = validateCSV(rows);
+      console.log("VALIDATION", validation);
 
       if (!validation.valid) {
         setError(
@@ -50,15 +55,20 @@ export function CSVUploader({
       }
 
       const mappedOrders = mapOrders(rows);
+      console.log("ORDERS", mappedOrders);
 
       const mappedItems = mapOrderItems(rows);
+      console.log("ITEMS", mappedItems);
 
       setOrders(mappedOrders);
-
       setItems(mappedItems);
-
       setFileName(file.name);
+
+      console.log("Preview generado correctamente.");
     } catch (err) {
+      console.error("ERROR IMPORTANDO CSV");
+      console.error(err);
+
       setError(
         err instanceof Error
           ? err.message
@@ -71,22 +81,27 @@ export function CSVUploader({
     try {
       setLoading(true);
 
+      console.log("Subiendo Orders...");
       await importOrders(orders);
 
+      console.log("Subiendo OrderItems...");
       await importOrderItems(items);
 
-      alert(
-        `✅ Importación finalizada
+      console.log("IMPORTACION FINALIZADA");
+
+      alert(`✅ Importación finalizada
 
 Pedidos: ${orders.length}
 
-Productos: ${items.length}`
-      );
+Productos: ${items.length}`);
 
       reset();
 
       onImportFinished?.();
     } catch (err) {
+      console.error("ERROR SUBIENDO A SUPABASE");
+      console.error(err);
+
       setError(
         err instanceof Error
           ? err.message
@@ -106,10 +121,7 @@ Productos: ${items.length}`
 
   return (
     <div className="space-y-6">
-
-      <CSVDropzone
-        onFileSelected={handleFile}
-      />
+      <CSVDropzone onFileSelected={handleFile} />
 
       {error && (
         <CSVError
@@ -133,7 +145,6 @@ Productos: ${items.length}`
           />
         </>
       )}
-
     </div>
   );
 }
