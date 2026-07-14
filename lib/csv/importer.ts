@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import type { OrderImport } from "@/lib/types/orders";
+import type { OrderImport } from "@/types/orders";
 
 export interface ImportResult {
   inserted: number;
@@ -12,18 +12,34 @@ export async function importOrders(
   const { error } = await supabase.from("orders").upsert(
     orders.map((order) => ({
       id: order.id,
+
       purchase_date: order.purchaseDate,
-      customer_name: order.customerName,
+
+      customer_firstname: order.customerFirstname,
+      customer_lastname: order.customerLastname,
+      customer_phone: order.customerPhone,
       customer_email: order.customerEmail,
-      shipping_method: order.shippingMethod,
-      payment_method: order.paymentMethod,
-      magento_status: order.magentoStatus,
-      warehouse_status: order.warehouseStatus,
-      tracking_number: order.trackingNumber,
-      grand_total: order.grandTotal,
-      delivery_address: order.deliveryAddress,
+
       delivery_city: order.deliveryCity,
       delivery_province: order.deliveryProvince,
+
+      payment_method: order.paymentMethod,
+      payment_cc_owner: order.paymentOwner,
+      payment_cc_type: order.paymentType,
+      payment_reference: order.paymentReference,
+      payment_additional_information:
+        order.paymentAdditionalInformation,
+
+      magento_status: order.magentoStatus,
+      warehouse_status: order.warehouseStatus,
+
+      grand_total: order.grandTotal,
+
+      tracking_number: order.trackingNumber,
+
+      billing_requested: order.billingRequested,
+      billing_business_name: order.billingBusinessName,
+      billing_cuit: order.billingCuit,
     })),
     {
       onConflict: "id",

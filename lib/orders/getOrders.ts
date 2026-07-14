@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/orders";
 
 export async function getOrders(limit = 50): Promise<Order[]> {
   const { data, error } = await supabase

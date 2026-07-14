@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/topbar";
-import { CSVUploader } from "@/components/csv-uploader";
+import { CSVUploader } from "@/components/csv/CSVUploader";
 import { getOrders } from "@/lib/orders/getOrders";
-import type { Order } from "@/types/order";
+import type { Order } from "@/types/orders";
 import { formatDate } from "@/lib/utils/date";
 import { ChevronDown, Search, Filter, ChevronRight } from "lucide-react";
 
@@ -71,13 +71,14 @@ export default function OrdersPage() {
   });
   const [showCSVUploader, setShowCSVUploader] = useState(false);
 
+  async function loadOrders() {
+    const data = await getOrders(50);
+    setOrders(data);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function load() {
-      const data = await getOrders(50);
-      setOrders(data);
-      setLoading(false);
-    }
-    load();
+    loadOrders();
   }, []);
 
   const filteredOrders = orders.filter((order) => {
@@ -120,8 +121,9 @@ export default function OrdersPage() {
         {/* CSV Uploader Section */}
         {showCSVUploader && (
           <CSVUploader
-            onDataLoaded={(orders) => {
-              console.log("CSV cargado:", orders);
+            onImportFinished={() => {
+              loadOrders();
+              setShowCSVUploader(false);
             }}
           />
         )}
@@ -187,7 +189,7 @@ export default function OrdersPage() {
           </div>
 
           {/* Order Rows */}
-          <div className="divide-y divide-border max-h-96 overflow-y-auto">
+          <div className="divide-y divide-border max-h-160 overflow-y-auto">
             {filteredOrders.map((order) => (
               <div
                 key={order.id}
