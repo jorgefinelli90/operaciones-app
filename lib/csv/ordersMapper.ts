@@ -46,9 +46,7 @@ export function mapOrders(
     orders.set(id, {
       id,
 
-      purchaseDate: parsePurchaseDate(
-        row["created_at"] || ""
-      ),
+      purchaseDate: row["created_at"]?.trim() || null,
 
       customerFirstname:
         row["sales_order_shipping_address.firstname"]?.trim() || "",
