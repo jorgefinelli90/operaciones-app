@@ -7,7 +7,10 @@ import { CSVUploader } from "@/components/csv/CSVUploader";
 import { getOrders } from "@/lib/orders/getOrders";
 import type { Order } from "@/types/orders";
 import { formatDate } from "@/lib/utils/date";
-import { ChevronDown, Search, Filter, ChevronRight } from "lucide-react";
+import { ChevronDown, Search, Filter, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+type SortKey = "id" | "customer_name" | "purchase_date" | "grand_total" | "warehouse_status" | null;
+type SortDirection = "asc" | "desc" | null;
 
 const statusColors = {
   pendiente: "bg-yellow-500/10 text-yellow-400",
@@ -70,6 +73,22 @@ export default function OrdersPage() {
     warehouse: "all",
   });
   const [showCSVUploader, setShowCSVUploader] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortKey(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
 
   async function loadOrders() {
     const data = await getOrders(50);
@@ -81,7 +100,7 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
-  const filteredOrders = orders.filter((order) => {
+  let filteredOrders = orders.filter((order) => {
     if (
       filters.status !== "all" &&
       order.warehouse_status.toLowerCase() !== filters.status
@@ -94,6 +113,30 @@ export default function OrdersPage() {
       return false;
     return true;
   });
+
+  // Apply sorting
+  if (sortKey && sortDirection) {
+    filteredOrders = [...filteredOrders].sort((a, b) => {
+      let aValue: any = a[sortKey];
+      let bValue: any = b[sortKey];
+
+      // Handle different data types
+      if (sortKey === "grand_total") {
+        aValue = parseFloat(aValue) || 0;
+        bValue = parseFloat(bValue) || 0;
+      } else if (sortKey === "purchase_date") {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      } else if (typeof aValue === "string") {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -189,7 +232,7 @@ export default function OrdersPage() {
           </div>
 
           {/* Order Rows */}
-          <div className="divide-y divide-border max-h-160 overflow-y-auto">
+          <div className="divide-y divide-border max-h-96 overflow-y-auto">
             {filteredOrders.map((order) => (
               <div
                 key={order.id}
