@@ -3,9 +3,7 @@ import type { OrderImport } from "@/types/orders";
 function parseCurrency(value: string): number {
   if (!value) return 0;
 
-  return parseFloat(
-    value.replace(/,/g, "").trim()
-  );
+  return parseFloat(value.replace(/,/g, "").trim());
 }
 
 const STATUS_MAP: Record<string, string> = {
@@ -27,9 +25,7 @@ function getWarehouseStatus(status: string) {
   return STATUS_MAP[status.toLowerCase()] ?? status;
 }
 
-export function mapOrders(
-  rows: Record<string, string>[]
-): OrderImport[] {
+export function mapOrders(rows: Record<string, string>[]): OrderImport[] {
   const orders = new Map<string, OrderImport>();
 
   for (const row of rows) {
@@ -41,17 +37,24 @@ export function mapOrders(
       continue;
     }
 
-    const magentoStatus =
-      row["sales_order_grid.status"]?.trim() || "";
+    const magentoStatus = row["sales_order_grid.status"]?.trim() || "";
 
     const purchaseDate = row["created_at"]?.trim();
+
+    let formattedPurchaseDate: string | null = null;
+
+    if (purchaseDate) {
+      const [date, time] = purchaseDate.split(" ");
+
+      const [day, month, year] = date.split("-");
+
+      formattedPurchaseDate = `${year}-${month}-${day}T${time}:00-03:00`;
+    }
 
     orders.set(id, {
       id,
 
-      purchaseDate: purchaseDate
-        ? `${purchaseDate}-03:00`
-        : null,
+      purchaseDate: formattedPurchaseDate,
 
       customerFirstname:
         row["sales_order_shipping_address.firstname"]?.trim() || "",
@@ -62,38 +65,30 @@ export function mapOrders(
       customerPhone:
         row["sales_order_shipping_address.telephone"]?.trim() || "",
 
-      customerEmail:
-        row["sales_order_shipping_address.email"]?.trim() || "",
+      customerEmail: row["sales_order_shipping_address.email"]?.trim() || "",
 
-      deliveryCity:
-        row["sales_order_shipping_address.city"]?.trim() || "",
+      deliveryCity: row["sales_order_shipping_address.city"]?.trim() || "",
 
       deliveryProvince:
         row["sales_order_shipping_address.region"]?.trim() || "",
 
-      paymentMethod:
-        row["sales_order_payment.method"]?.trim() || "",
+      shippingMethod: row["shipping_method"]?.trim() || "",
 
-      paymentOwner:
-        row["sales_order_payment.cc_owner"]?.trim() || "",
+      shippingDescription: row["shipping_description"]?.trim() || "",
 
-      paymentType:
-        row["sales_order_payment.cc_type"]?.trim() || "",
+      paymentMethod: row["sales_order_payment.method"]?.trim() || "",
 
-      paymentReference:
-        row["sales_order_payment.po_number"]?.trim() || "",
+      paymentOwner: row["sales_order_payment.cc_owner"]?.trim() || "",
 
-      paymentAdditionalInformation:
-        row["sales_order_payment.additional_information"]?.trim() || "",
+      paymentType: row["sales_order_payment.cc_type"]?.trim() || "",
+
+      paymentReference: row["sales_order_payment.po_number"]?.trim() || "",
 
       magentoStatus,
 
-      warehouseStatus:
-        getWarehouseStatus(magentoStatus),
+      warehouseStatus: getWarehouseStatus(magentoStatus),
 
-      grandTotal: parseCurrency(
-        row["sales_order_grid.grand_total"] || "0"
-      ),
+      grandTotal: parseCurrency(row["sales_order_grid.grand_total"] || "0"),
 
       trackingNumber: null,
 

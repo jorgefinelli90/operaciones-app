@@ -22,7 +22,6 @@ export const REQUIRED_COLUMNS = [
   "sales_order_payment.cc_owner",
   "sales_order_payment.cc_type",
   "sales_order_payment.po_number",
-  "sales_order_payment.additional_information",
 ];
 
 export interface ValidationResult {

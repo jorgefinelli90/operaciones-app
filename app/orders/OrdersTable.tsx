@@ -17,54 +17,60 @@ const statusColors = {
   cambio: "bg-purple-500/10 text-purple-400",
 };
 
-function shortShipping(shipping: string) {
-  if (!shipping) {
+function shortShipping(shippingDescription: string) {
+  if (!shippingDescription) {
     return {
       title: "-",
       subtitle: "",
     };
   }
 
-  if (shipping.includes("Andreani")) {
-    if (shipping.includes("Retiro en sucursal")) {
-      return {
-        title: "Andreani",
-        subtitle: "Retiro sucursal",
-      };
-    }
+  const shipping = shippingDescription.trim();
+
+  // ==========================
+  // RETIRO PICKUP
+  // ==========================
+  if (shipping.startsWith("amt - Retiro en tienda")) {
+    const parts = shipping.split(" - ");
 
     return {
-      title: "Andreani",
-      subtitle: "Domicilio",
+      title: "Retiro PickUp",
+      subtitle: parts.length >= 3 ? parts[2] : "",
     };
   }
 
-  if (shipping.toLowerCase().includes("treggo")) {
+  // ==========================
+  // ANDREANI DOMICILIO
+  // ==========================
+  if (shipping.startsWith("Andreani - Envio a domicilio")) {
     return {
-      title: "Treggo",
-      subtitle: "Same / Next Day",
+      title: "Andreani Domicilio",
+      subtitle: "Envío a domicilio",
     };
   }
 
-  if (shipping.includes("Retiro en tienda")) {
+  // ==========================
+  // ANDREANI SUCURSAL
+  // ==========================
+  if (shipping.startsWith("Andreani - Retiro en sucursal")) {
     return {
-      title: "Retiro tienda",
-      subtitle: shipping.split("-").pop()?.trim() ?? "",
+      title: "Andreani Sucursal",
+      subtitle: "Retiro en sucursal",
     };
   }
 
+  // ==========================
+  // DEFAULT
+  // ==========================
   return {
     title: shipping,
     subtitle: "",
   };
 }
 
-export function OrdersTable({
-  orders,
-}: OrdersTableProps) {
+export function OrdersTable({ orders }: OrdersTableProps) {
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
-
       <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur">
         <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <div>Pedido</div>
@@ -79,22 +85,16 @@ export function OrdersTable({
       </div>
 
       <div className="divide-y divide-border max-h-96 overflow-y-auto">
-
         {orders.map((order) => (
-
           <div
             key={order.id}
             className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40"
           >
-
             <div>
-              <p className="font-semibold text-primary">
-                {order.id}
-              </p>
+              <p className="font-semibold text-primary">{order.id}</p>
             </div>
 
             <div className="min-w-0">
-
               <p className="truncate font-semibold">
                 {order.customer_firstname} {order.customer_lastname}
               </p>
@@ -102,11 +102,9 @@ export function OrdersTable({
               <p className="truncate text-xs text-muted-foreground">
                 {order.customer_email}
               </p>
-
             </div>
 
             <div>
-
               <p className="font-medium">
                 {formatDate(order.purchase_date).split(" ")[0]}
               </p>
@@ -114,26 +112,20 @@ export function OrdersTable({
               <p className="text-xs text-muted-foreground">
                 {formatDate(order.purchase_date).split(" ")[1]}
               </p>
-
             </div>
 
             <div>
-
               <p className="font-medium">
-                {shortShipping(order.shipping_method).title}
+                {shortShipping(order.shipping_description).title}
               </p>
 
               <p className="truncate text-xs text-muted-foreground">
-                {shortShipping(order.shipping_method).subtitle}
+                {shortShipping(order.shipping_description).subtitle}
               </p>
-
             </div>
 
             <div className="min-w-0">
-
-              <p className="truncate font-medium">
-                {order.delivery_address}
-              </p>
+              <p className="truncate font-medium">{order.delivery_address}</p>
 
               <p className="truncate text-xs text-muted-foreground">
                 {order.delivery_city}
@@ -142,11 +134,9 @@ export function OrdersTable({
               <p className="truncate text-xs text-muted-foreground">
                 {order.delivery_province}
               </p>
-
             </div>
 
             <div>
-
               <span
                 className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
                   statusColors[
@@ -156,28 +146,21 @@ export function OrdersTable({
               >
                 {order.warehouse_status}
               </span>
-
             </div>
 
             <div className="text-right font-semibold tabular-nums">
-
               {new Intl.NumberFormat("es-AR", {
                 style: "currency",
                 currency: "ARS",
               }).format(order.grand_total)}
-
             </div>
 
             <div className="flex justify-center">
               <ChevronRight className="h-5 w-5 text-primary" />
             </div>
-
           </div>
-
         ))}
-
       </div>
-
     </div>
   );
 }

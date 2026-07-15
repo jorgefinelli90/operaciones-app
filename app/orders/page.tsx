@@ -143,8 +143,8 @@ export default function OrdersPage() {
 
   if (sortKey && sortDirection) {
     filteredOrders = [...filteredOrders].sort((a, b) => {
-      let aValue: unknown;
-      let bValue: unknown;
+      let aValue: string | number = "";
+      let bValue: string | number = "";
 
       switch (sortKey) {
         case "id":
@@ -176,38 +176,27 @@ export default function OrdersPage() {
           return 0;
       }
 
-      if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = (bValue as string).toLowerCase();
+      const isTextSort =
+        sortKey === "id" ||
+        sortKey === "customer_firstname" ||
+        sortKey === "warehouse_status";
+
+      if (isTextSort) {
+        const normalizedA = String(aValue).toLowerCase();
+        const normalizedB = String(bValue).toLowerCase();
+
+        if (normalizedA < normalizedB) return sortDirection === "asc" ? -1 : 1;
+        if (normalizedA > normalizedB) return sortDirection === "asc" ? 1 : -1;
+
+        return 0;
       }
 
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      const numericA = aValue as number;
+      const numericB = bValue as number;
 
-      return 0;
-    });
-  }
+      if (numericA < numericB) return sortDirection === "asc" ? -1 : 1;
+      if (numericA > numericB) return sortDirection === "asc" ? 1 : -1;
 
-  // Apply sorting
-  if (sortKey && sortDirection) {
-    filteredOrders = [...filteredOrders].sort((a, b) => {
-      let aValue: any = a[sortKey];
-      let bValue: any = b[sortKey];
-
-      // Handle different data types
-      if (sortKey === "grand_total") {
-        aValue = parseFloat(aValue) || 0;
-        bValue = parseFloat(bValue) || 0;
-      } else if (sortKey === "purchase_date") {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      } else if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
   }

@@ -9,7 +9,6 @@ export interface ImportResult {
 export async function importOrders(
   orders: OrderImport[],
 ): Promise<ImportResult> {
-
   console.log("========== IMPORT ORDERS ==========");
   console.log("Cantidad:", orders.length);
 
@@ -19,7 +18,7 @@ export async function importOrders(
       purchaseDate: o.purchaseDate,
       customerFirstname: o.customerFirstname,
       customerLastname: o.customerLastname,
-    }))
+    })),
   );
 
   const rows = orders.map((order) => ({
@@ -39,9 +38,8 @@ export async function importOrders(
     payment_cc_owner: order.paymentOwner,
     payment_cc_type: order.paymentType,
     payment_reference: order.paymentReference,
-    payment_additional_information:
-      order.paymentAdditionalInformation,
-
+    shipping_method: order.shippingMethod,
+    shipping_description: order.shippingDescription,
     magento_status: order.magentoStatus,
     warehouse_status: order.warehouseStatus,
 
@@ -57,11 +55,9 @@ export async function importOrders(
   console.log("Primer registro a insertar:");
   console.log(rows[0]);
 
-  const { error } = await supabase
-    .from("orders")
-    .upsert(rows, {
-      onConflict: "id",
-    });
+  const { error } = await supabase.from("orders").upsert(rows, {
+    onConflict: "id",
+  });
 
   if (error) {
     console.error("ERROR IMPORTANDO ORDERS");

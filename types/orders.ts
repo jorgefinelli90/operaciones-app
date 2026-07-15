@@ -11,11 +11,14 @@ export interface OrderImport {
   deliveryCity: string;
   deliveryProvince: string;
 
+  // NUEVO
+  shippingMethod: string;
+  shippingDescription: string;
+
   paymentMethod: string;
   paymentOwner: string;
   paymentType: string;
   paymentReference: string;
-  paymentAdditionalInformation: string;
 
   magentoStatus: string;
   warehouseStatus: string;
@@ -35,6 +38,7 @@ export interface Order {
   purchase_date: string;
   customer_name: string;
   shipping_method: string;
+  shippingDescription: string;
   delivery_address: string;
   customer_firstname: string;
   customer_lastname: string;
