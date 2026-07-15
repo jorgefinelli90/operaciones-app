@@ -9,6 +9,7 @@ import type { Order } from "@/types/orders";
 import { formatDate } from "@/lib/utils/date";
 import { OrdersFilters } from "@/app/orders/OrdersFilters";
 import { OrdersToolbar } from "@/app/orders/OrdersToolbar";
+import { OrderDrawer } from "@/app/orders/OrderDrawer";
 import {
   ChevronDown,
   Search,
@@ -36,6 +37,7 @@ const statusColors = {
   devuelto: "bg-orange-500/10 text-orange-400",
   cambio: "bg-purple-500/10 text-purple-400",
 };
+
 
 function shortShipping(shipping: string) {
   if (!shipping) {
@@ -84,7 +86,15 @@ function shortShipping(shipping: string) {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [selectedOrder, setSelectedOrder] =
+    useState<Order | null>(null);
+
+  const [drawerOpen, setDrawerOpen] =
+    useState(false);
+
   const [search, setSearch] = useState("");
+
   const [filters, setFilters] = useState({
     status: "all",
     warehouse: "all",
@@ -279,7 +289,22 @@ export default function OrdersPage() {
   onFiltersChange={setFilters}
 />
 
-        <OrdersTable orders={filteredOrders} />
+        <OrdersTable
+  orders={filteredOrders}
+  onOrderClick={(order) => {
+    setSelectedOrder(order);
+    setDrawerOpen(true);
+  }}
+/>
+
+<OrderDrawer
+  order={selectedOrder}
+  open={drawerOpen}
+  onClose={() => {
+    setDrawerOpen(false);
+    setSelectedOrder(null);
+  }}
+/>
 
         {/* Pagination */}
         <div className="mt-6 flex items-center justify-between">
