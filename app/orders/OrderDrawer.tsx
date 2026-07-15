@@ -1,6 +1,9 @@
 "use client";
 
 import type { Order } from "@/types/orders";
+import { useEffect, useState } from "react";
+import type { OrderItem } from "@/types/orderItem";
+import { getOrderItems } from "@/lib/orders/getOrderItems";
 
 interface OrderDrawerProps {
   order: Order | null;
@@ -15,6 +18,34 @@ export function OrderDrawer({
   open,
   onClose,
 }: OrderDrawerProps) {
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  useEffect(() => {
+    async function loadItems() {
+      if (!order) {
+        setItems([]);
+        return;
+      }
+
+      setLoadingItems(true);
+
+      try {
+        const data = await getOrderItems(order.id);
+
+        setItems(data);
+      } finally {
+        setLoadingItems(false);
+      }
+    }
+
+    if (open) {
+      loadItems();
+    } else {
+      setItems([]);
+    }
+  }, [open, order]);
+
   return (
     <>
       {open && (
@@ -84,6 +115,65 @@ export function OrderDrawer({
             </p>
 
           </div>
+
+          <hr className="border-border" />
+
+<div>
+
+  <p className="mb-3 text-sm font-semibold">
+    Productos
+  </p>
+
+  {loadingItems ? (
+
+    <p className="text-sm text-muted-foreground">
+      Cargando...
+    </p>
+
+  ) : (
+
+    <div className="space-y-3">
+
+      {items.map((item) => (
+
+        <div
+          key={`${item.orderId}-${item.sku}`}
+          className="rounded-lg border border-border p-3"
+        >
+
+          <p className="font-medium">
+            {item.productName}
+          </p>
+
+          <p className="text-xs text-muted-foreground">
+            {item.sku}
+          </p>
+
+          <div className="mt-2 flex justify-between text-sm">
+
+            <span>
+
+              Cantidad: {item.qty}
+
+            </span>
+
+            <span>
+
+              ${item.price.toLocaleString("es-AR")}
+
+            </span>
+
+          </div>
+
+        </div>
+
+      ))}
+
+    </div>
+
+  )}
+
+</div>
 
         </div>
 
