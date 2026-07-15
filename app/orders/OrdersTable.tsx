@@ -40,6 +40,16 @@ function shortShipping(shippingDescription: string) {
   }
 
   // ==========================
+  // TREGGO
+  // ==========================
+  if (shipping.startsWith("Envío rápido por Treggo")) {
+    return {
+      title: "Treggo",
+      subtitle: "Envío a domicilio",
+    };
+  }
+
+  // ==========================
   // ANDREANI DOMICILIO
   // ==========================
   if (shipping.startsWith("Andreani - Envio a domicilio")) {
@@ -116,11 +126,11 @@ export function OrdersTable({ orders }: OrdersTableProps) {
 
             <div>
               <p className="font-medium">
-                {shortShipping(order.shipping_description).title}
+                {shortShipping(order.shippingDescription).title}
               </p>
 
               <p className="truncate text-xs text-muted-foreground">
-                {shortShipping(order.shipping_description).subtitle}
+                {shortShipping(order.shippingDescription).subtitle}
               </p>
             </div>
 

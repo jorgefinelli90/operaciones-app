@@ -88,6 +88,7 @@ export default function OrdersPage() {
   const [filters, setFilters] = useState({
     status: "all",
     warehouse: "all",
+    pickupStore: "all",
   });
   const [showCSVUploader, setShowCSVUploader] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>(null);
@@ -136,9 +137,35 @@ export default function OrdersPage() {
       filters.status === "all" ||
       order.warehouse_status.toLowerCase() === filters.status;
 
-    const matchesWarehouse = filters.warehouse === "all";
+    const shipping = order.shippingDescription.toLowerCase();
 
-    return matchesSearch && matchesStatus && matchesWarehouse;
+    let shippingType = "";
+
+    if (shipping.startsWith("amt - retiro en tienda")) {
+      shippingType = "pickup";
+    } else if (shipping.startsWith("andreani - envio a domicilio")) {
+      shippingType = "andreani_domicilio";
+    } else if (shipping.startsWith("andreani - retiro en sucursal")) {
+      shippingType = "andreani_sucursal";
+    } else if (shipping.startsWith("envío rápido por treggo")) {
+      shippingType = "treggo";
+    }
+
+    const matchesWarehouse =
+      filters.warehouse === "all" || filters.warehouse === shippingType;
+
+    let pickupStore = "";
+
+    if (shipping.startsWith("amt - retiro en tienda")) {
+      const parts = order.shippingDescription.split(" - ");
+
+      pickupStore = parts.length >= 3 ? parts[2].trim() : "";
+    }
+
+    const matchesPickup =
+      filters.pickupStore === "all" || pickupStore === filters.pickupStore;
+
+    return matchesSearch && matchesStatus && matchesWarehouse && matchesPickup;
   });
 
   if (sortKey && sortDirection) {
@@ -201,6 +228,26 @@ export default function OrdersPage() {
     });
   }
 
+  const pickupStores = Array.from(
+  new Set(
+    orders
+      .filter((o) =>
+        o.shippingDescription
+          .toLowerCase()
+          .startsWith("amt - retiro en tienda")
+      )
+      .map((o) => {
+        const parts =
+          o.shippingDescription.split(" - ");
+
+        return parts.length >= 3
+          ? parts[2].trim()
+          : "";
+      })
+      .filter(Boolean)
+  )
+).sort();
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -225,11 +272,12 @@ export default function OrdersPage() {
 
         {/* Filters */}
         <OrdersFilters
-          search={search}
-          onSearchChange={setSearch}
-          filters={filters}
-          onFiltersChange={setFilters}
-        />
+  search={search}
+  onSearchChange={setSearch}
+  filters={filters}
+  pickupStores={pickupStores}
+  onFiltersChange={setFilters}
+/>
 
         <OrdersTable orders={filteredOrders} />
 
