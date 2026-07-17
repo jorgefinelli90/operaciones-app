@@ -5,7 +5,7 @@ import type { Order } from "@/types/orders";
 import { Field } from "@/components/ui/Field";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-
+import { InvoiceForm } from "./InvoiceForm";
 interface PaymentSectionProps {
   order: Order | null;
 }
@@ -23,14 +23,11 @@ function translatePayment(method?: string) {
 
   const payment = method.toLowerCase();
 
-  if (payment.includes("mercadopago"))
-    return "Mercado Pago";
+  if (payment.includes("mercadopago")) return "Mercado Pago";
 
-  if (payment.includes("talopay"))
-    return "TaloPay";
+  if (payment.includes("talopay")) return "TaloPay";
 
-  if (payment.includes("bank"))
-    return "Transferencia";
+  if (payment.includes("bank")) return "Transferencia";
 
   return method;
 }
@@ -62,40 +59,32 @@ function translateMagentoStatus(status?: string) {
   }
 }
 
-export function PaymentSection({
-  order,
-}: PaymentSectionProps) {
+export function PaymentSection({ order }: PaymentSectionProps) {
   if (!order) return null;
 
   return (
     <SectionCard>
-      <SectionTitle
-        icon="💳"
-        title="Pago"
-      />
+      <SectionTitle icon="💳" title="Pago" />
 
       <div className="space-y-5">
         <Field
           label="Medio de Pago"
-          value={translatePayment(
-            order.payment_method,
-          )}
+          value={translatePayment(order.payment_method)}
         />
 
-        <Field
-          label="Total"
-          value={formatCurrency(
-            order.grand_total,
-          )}
-        />
+        <Field label="Total" value={formatCurrency(order.grand_total)} />
 
         <Field
           label="Estado Magento"
-          value={translateMagentoStatus(
-            order.magento_status,
-          )}
+          value={translateMagentoStatus(order.magento_status)}
         />
       </div>
+      <InvoiceForm
+        initialRequested={order.billing_requested ?? false}
+        initialCuit={order.billing_cuit ?? ""}
+        initialBusinessName={order.billing_business_name ?? ""}
+        initialTaxAddress=""
+      />
     </SectionCard>
   );
 }
