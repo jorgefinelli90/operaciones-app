@@ -5,7 +5,7 @@ import type { Order } from "@/types/orders";
 import { CustomerSection } from "./CustomerSection";
 import { ProductsSection } from "./ProductsSection";
 import { ShippingSection } from "./ShippingSection";
-
+import { PaymentSection } from "./PaymentSection";
 interface OrderDrawerProps {
   order: Order | null;
   open: boolean;
@@ -53,6 +53,8 @@ export function OrderDrawer({
 />
 
 <ProductsSection order={order} />
+
+<PaymentSection order={order} />
           </div>
         </div>
       </aside>
