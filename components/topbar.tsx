@@ -34,7 +34,7 @@ export function TopBar() {
             <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
               JD
             </div>
-            <span className="text-sm font-medium text-foreground">Juan García</span>
+            <span className="text-sm font-medium text-foreground">Jorge Finelli</span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>

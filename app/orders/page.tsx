@@ -9,7 +9,7 @@ import type { Order } from "@/types/orders";
 import { formatDate } from "@/lib/utils/date";
 import { OrdersFilters } from "@/app/orders/OrdersFilters";
 import { OrdersToolbar } from "@/app/orders/OrdersToolbar";
-import { OrderDrawer } from "@/app/orders/OrderDrawer";
+import { OrderDrawer } from "@/components/OrderDrawer/OrderDrawer";
 import {
   ChevronDown,
   Search,
@@ -87,6 +87,30 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const handleWarehouseStatusUpdated = (
+  orderId: string,
+  newStatus: string,
+) => {
+  setOrders((prev) =>
+    prev.map((order) =>
+      order.id === orderId
+        ? {
+            ...order,
+            warehouse_status: newStatus,
+          }
+        : order,
+    ),
+  );
+
+  setSelectedOrder((prev) =>
+    prev && prev.id === orderId
+      ? {
+          ...prev,
+          warehouse_status: newStatus,
+        }
+      : prev,
+  );
+};
   const [selectedOrder, setSelectedOrder] =
     useState<Order | null>(null);
 
@@ -304,6 +328,7 @@ export default function OrdersPage() {
     setDrawerOpen(false);
     setSelectedOrder(null);
   }}
+  onWarehouseStatusUpdated={handleWarehouseStatusUpdated}
 />
 
         {/* Pagination */}
