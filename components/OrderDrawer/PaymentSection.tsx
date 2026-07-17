@@ -79,12 +79,7 @@ export function PaymentSection({ order }: PaymentSectionProps) {
           value={translateMagentoStatus(order.magento_status)}
         />
       </div>
-      <InvoiceForm
-        initialRequested={order.billing_requested ?? false}
-        initialCuit={order.billing_cuit ?? ""}
-        initialBusinessName={order.billing_business_name ?? ""}
-        initialTaxAddress=""
-      />
+      <InvoiceForm orderId={order.id} />
     </SectionCard>
   );
 }
