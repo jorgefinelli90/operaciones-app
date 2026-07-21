@@ -33,8 +33,8 @@ export function CaseDrawer({
         onClick={onClose}
       />
 
-      <aside className="fixed right-0 top-0 z-50 flex h-screen w-[650px] flex-col border-l bg-white shadow-xl">
-        <header className="flex items-center justify-between border-b p-5">
+      <aside className="fixed right-0 top-0 z-50 flex h-screen w-[650px] flex-col border-l border-border bg-background shadow-xl">
+        <header className="flex items-center justify-between border-b border-border p-5">
           <div>
             <h2 className="text-lg font-semibold">
               Caso #{item.id}
