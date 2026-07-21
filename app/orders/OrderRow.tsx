@@ -33,7 +33,7 @@ export function OrderRow({
   return (
     <div
   onClick={onClick}
-  className="grid grid-cols-[170px_2fr_110px_2fr_1fr_40px] gap-4 items-start border-l-4 border-l-transparent px-6 py-2 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
+  className="grid grid-cols-[150px_200px_100px_150px_120px_50px] gap-3 items-start border-l-4 border-l-transparent px-6 py-2 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
 >
       <div className="flex items-center gap-2">
         <p className="font-semibold text-primary">
@@ -84,7 +84,7 @@ export function OrderRow({
         </span>
       </div>
 
-      <div className="min-w-0 text-right font-semibold tabular-nums">
+      <div className="text-right font-semibold tabular-nums truncate">
         {new Intl.NumberFormat("es-AR", {
           style: "currency",
           currency: "ARS",
