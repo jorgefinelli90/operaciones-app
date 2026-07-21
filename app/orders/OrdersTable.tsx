@@ -28,20 +28,19 @@ export function OrdersTable({
 }: OrdersTableProps) {
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
-      <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur overflow-x-auto">
-        <div className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur">
+        <div className="grid grid-cols-[170px_2fr_110px_2fr_140px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <div>Pedido</div>
           <div>Cliente</div>
           <div>Fecha</div>
           <div>Envío</div>
-          <div>Dirección</div>
           <div>Estado</div>
           <div className="text-right">Importe</div>
           <div />
         </div>
       </div>
 
-      <div className="divide-y divide-border max-h-96 overflow-y-auto overflow-x-auto">
+      <div className="divide-y divide-border">
         {orders.map((order) => (
   <OrderRow
     key={order.id}

@@ -33,7 +33,7 @@ export function OrderRow({
   return (
     <div
   onClick={onClick}
-  className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-3 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
+  className="grid grid-cols-[170px_2fr_110px_2fr_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-3 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
 >
       <div>
         <p className="font-semibold text-primary">
@@ -68,20 +68,6 @@ export function OrderRow({
 
         <p className="truncate text-xs text-muted-foreground">
           {shipping.subtitle}
-        </p>
-      </div>
-
-      <div className="min-w-0">
-        <p className="truncate font-medium">
-          {order.delivery_address}
-        </p>
-
-        <p className="truncate text-xs text-muted-foreground">
-          {order.delivery_city}
-        </p>
-
-        <p className="truncate text-xs text-muted-foreground">
-          {order.delivery_province}
         </p>
       </div>
 
