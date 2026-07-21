@@ -84,7 +84,7 @@ export function OrderRow({
         </span>
       </div>
 
-      <div className="text-right font-semibold tabular-nums whitespace-nowrap overflow-hidden">
+      <div className="text-right font-semibold tabular-nums overflow-hidden">
         {new Intl.NumberFormat("es-AR", {
           style: "currency",
           currency: "ARS",
