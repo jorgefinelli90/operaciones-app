@@ -33,7 +33,7 @@ export function OrderRow({
   return (
     <div
   onClick={onClick}
-  className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-5 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
+  className="grid grid-cols-[170px_2fr_110px_2fr_130px_140px_40px] gap-4 items-center border-l-4 border-l-transparent px-6 py-3 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
 >
       <div>
         <p className="font-semibold text-primary">
