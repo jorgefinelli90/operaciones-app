@@ -1,4 +1,6 @@
 export interface OrderItem {
+  id: number;
+
   orderId: string;
 
   sku: string;

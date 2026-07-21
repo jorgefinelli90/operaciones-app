@@ -11,15 +11,13 @@ export async function getOrderItems(
     .eq("order_id", orderId)
     .order("id");
 
-  console.log("ORDER ID:", orderId);
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
-
   if (error) {
     throw error;
   }
 
   return (data ?? []).map((item) => ({
+    id: Number(item.id),
+
     orderId: item.order_id,
 
     sku: item.sku,

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getInvoiceRequest } from "@/lib/invoices/getInvoiceRequest";
 import { saveInvoiceRequest } from "@/lib/invoices/saveInvoiceRequest";
 import type { InvoiceRequest } from "@/lib/invoices/types/invoice";
-
+import { toast } from "sonner";
 import { InvoiceStatusBadge } from "@/components/ui/InvoiceStatusBadge";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
@@ -34,34 +34,24 @@ export function InvoiceForm({
   useEffect(() => {
     async function load() {
       try {
-        const invoice =
-          await getInvoiceRequest(orderId);
+        const invoice = await getInvoiceRequest(orderId);
 
         if (invoice) {
           setRequested(invoice.requested);
-
           setStatus(invoice.status);
-
           setCuit(invoice.cuit ?? "");
-
-          setBusinessName(
-            invoice.business_name ?? "",
-          );
-
-          setTaxAddress(
-            invoice.tax_address ?? "",
-          );
+          setBusinessName(invoice.business_name ?? "");
+          setTaxAddress(invoice.tax_address ?? "");
         }
-      }  catch (err: any) {
-  console.error("ERROR COMPLETO:");
-  console.error(err);
+      } catch (err: any) {
+        console.error("ERROR COMPLETO:");
+        console.error(err);
+        console.error("message:", err?.message);
+        console.error("details:", err?.details);
+        console.error("hint:", err?.hint);
+        console.error("code:", err?.code);
 
-  console.error("message:", err?.message);
-  console.error("details:", err?.details);
-  console.error("hint:", err?.hint);
-  console.error("code:", err?.code);
-
-  alert("No se pudo guardar.");
+        toast.error("No se pudo guardar la solicitud.");
       } finally {
         setLoading(false);
       }
@@ -73,24 +63,24 @@ export function InvoiceForm({
   async function handleSave() {
     if (requested) {
       if (!cuit.trim()) {
-        alert("Ingrese el CUIT");
+        toast.warning("Ingrese el CUIT.");
         return;
       }
 
       const clean = cuit.replace(/\D/g, "");
 
       if (clean.length !== 11) {
-        alert("CUIT inválido");
+        toast.warning("El CUIT ingresado no es válido.");
         return;
       }
 
       if (!businessName.trim()) {
-        alert("Ingrese la Razón Social");
+        toast.warning("Ingrese la Razón Social.");
         return;
       }
 
       if (!taxAddress.trim()) {
-        alert("Ingrese el Domicilio Fiscal");
+        toast.warning("Ingrese el Domicilio Fiscal.");
         return;
       }
     }
@@ -100,15 +90,10 @@ export function InvoiceForm({
 
       const invoice: InvoiceRequest = {
         order_id: orderId,
-
         requested,
-
         cuit,
-
         business_name: businessName,
-
         tax_address: taxAddress,
-
         status: "pending",
       };
 
@@ -116,12 +101,14 @@ export function InvoiceForm({
 
       setStatus("pending");
 
-      alert("Solicitud guardada correctamente");
+      toast.success(
+        `Solicitud de Factura A guardada para el pedido ${orderId}.`
+      );
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
-console.error(err);
+      console.error(err);
 
-      alert("No se pudo guardar.");
+      toast.error("No se pudo guardar la solicitud.");
     } finally {
       setSaving(false);
     }
