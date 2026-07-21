@@ -72,9 +72,9 @@ export function OrderRow({
         </p>
       </div>
 
-      <div>
+      <div className="min-w-0">
         <span
-          className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold ${
+          className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold truncate ${
             statusColors[
               order.warehouse_status.toLowerCase() as keyof typeof statusColors
             ]
@@ -84,7 +84,7 @@ export function OrderRow({
         </span>
       </div>
 
-      <div className="text-right font-semibold tabular-nums overflow-hidden">
+      <div className="min-w-0 text-right font-semibold tabular-nums">
         {new Intl.NumberFormat("es-AR", {
           style: "currency",
           currency: "ARS",
