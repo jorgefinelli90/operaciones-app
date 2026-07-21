@@ -29,7 +29,7 @@ export function OrdersTable({
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="sticky top-0 z-10 border-b border-border bg-secondary/60 backdrop-blur overflow-x-auto lg:overflow-x-visible">
-        <div className="grid grid-cols-[170px_2fr_110px_2fr_180px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-max lg:min-w-full">
+        <div className="grid grid-cols-[170px_2fr_110px_2fr_200px_40px] gap-4 px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-max lg:min-w-full">
           <div>Pedido</div>
           <div>Cliente</div>
           <div>Fecha</div>
