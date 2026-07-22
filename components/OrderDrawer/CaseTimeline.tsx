@@ -93,7 +93,7 @@ export function CaseTimeline({
 
           </div>
 
-          <div className="flex-1 rounded-lg border bg-white p-4">
+          <div className="flex-1 rounded-lg border bg-[#262626] p-4">
 
             <div className="flex items-center justify-between">
 
@@ -135,7 +135,7 @@ export function CaseTimeline({
             )}
 
             {event.payload && (
-              <div className="mt-3 rounded bg-neutral-50 p-3">
+              <div className="mt-3 rounded bg-card p-3">
 
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-neutral-500">
 
