@@ -145,7 +145,7 @@ export function OrdersTable({ orders, onOrderClick }: OrdersTableProps) {
                     column === dropTarget && column !== draggedColumn
                       ? "bg-primary/10 text-foreground"
                       : ""
-                  } ${column === "amount" ? "justify-end" : ""}`}
+                  } ${column === "amount" ? "justify-center" : ""}`}
                   title={`Arrastrar para mover ${COLUMN_LABELS[column]}`}
                 >
                   <GripVertical aria-hidden="true" className="size-3.5 shrink-0" />
