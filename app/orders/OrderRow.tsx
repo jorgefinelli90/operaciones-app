@@ -3,13 +3,15 @@
 import { ChevronRight } from "lucide-react";
 
 import type { Order } from "@/types/orders";
-
 import { formatDate } from "@/lib/utils/date";
 
+import type { OrderColumnId } from "./OrdersTable";
 import { getShippingInfo } from "./shipping";
 
 interface OrderRowProps {
   order: Order;
+  columnOrder: OrderColumnId[];
+  gridTemplateColumns: string;
   onClick?: () => void;
 }
 
@@ -24,75 +26,98 @@ const statusColors = {
 
 export function OrderRow({
   order,
+  columnOrder,
+  gridTemplateColumns,
   onClick,
 }: OrderRowProps) {
-  const shipping = getShippingInfo(
-    order.shippingDescription
-  );
+  const shipping = getShippingInfo(order.shippingDescription);
+  const [date, time] = formatDate(order.purchase_date).split(" ");
+  const amount = new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+  }).format(order.grand_total);
+
+  function renderCell(column: OrderColumnId) {
+    switch (column) {
+      case "order":
+        return (
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate font-semibold text-primary">{order.id}</p>
+            <ChevronRight aria-hidden="true" className="size-5 shrink-0 text-primary" />
+          </div>
+        );
+      case "customer":
+        return (
+          <div className="min-w-0">
+            <p className="truncate font-semibold">
+              {order.customer_firstname} {order.customer_lastname}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {order.customer_email}
+            </p>
+          </div>
+        );
+      case "date":
+        return (
+          <div className="min-w-0 whitespace-nowrap">
+            <p className="font-medium">{date}</p>
+            <p className="text-xs text-muted-foreground">{time}</p>
+          </div>
+        );
+      case "shipping":
+        return (
+          <div className="min-w-0">
+            <p className="truncate font-medium">{shipping.title}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {shipping.subtitle}
+            </p>
+          </div>
+        );
+      case "address":
+        return (
+          <div className="min-w-0">
+            <p className="truncate font-medium">{order.delivery_address || "—"}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {[order.delivery_city, order.delivery_province]
+                .filter(Boolean)
+                .join(", ") || "—"}
+            </p>
+          </div>
+        );
+      case "status":
+        return (
+          <div className="min-w-0">
+            <span
+              className={`inline-flex max-w-full truncate rounded-md px-2.5 py-1 text-xs font-semibold ${
+                statusColors[
+                  order.warehouse_status.toLowerCase() as keyof typeof statusColors
+                ] ?? "bg-secondary text-secondary-foreground"
+              }`}
+            >
+              {order.warehouse_status}
+            </span>
+          </div>
+        );
+      case "amount":
+        return (
+          <div className="min-w-0 whitespace-nowrap text-center font-semibold tabular-nums text-xs">
+            {amount}
+          </div>
+        );
+    }
+  }
 
   return (
     <div
-  onClick={onClick}
-  className="grid grid-cols-[150px_200px_100px_150px_120px_50px] gap-3 items-start border-l-4 border-l-transparent px-6 py-2 transition-all hover:border-l-primary hover:bg-secondary/40 cursor-pointer"
->
-      <div className="flex items-center gap-2">
-        <p className="font-semibold text-primary">
-          {order.id}
-        </p>
-        <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
-      </div>
-
-      <div className="min-w-0">
-        <p className="truncate font-semibold">
-          {order.customer_firstname} {order.customer_lastname}
-        </p>
-
-        <p className="truncate text-xs text-muted-foreground">
-          {order.customer_email}
-        </p>
-      </div>
-
-      <div>
-        <p className="font-medium">
-          {formatDate(order.purchase_date).split(" ")[0]}
-        </p>
-
-        <p className="text-xs text-muted-foreground">
-          {formatDate(order.purchase_date).split(" ")[1]}
-        </p>
-      </div>
-
-      <div>
-        <p className="font-medium">
-          {shipping.title}
-        </p>
-
-        <p className="truncate text-xs text-muted-foreground">
-          {shipping.subtitle}
-        </p>
-      </div>
-
-      <div className="min-w-0">
-        <span
-          className={`inline-flex rounded-md px-3 py-1 text-xs font-semibold truncate ${
-            statusColors[
-              order.warehouse_status.toLowerCase() as keyof typeof statusColors
-            ]
-          }`}
-        >
-          {order.warehouse_status}
-        </span>
-      </div>
-
-      <div className="text-right font-semibold tabular-nums -mr-[49px]">
-        {new Intl.NumberFormat("es-AR", {
-          style: "currency",
-          currency: "ARS",
-        }).format(order.grand_total)}
-      </div>
-
-      <div />
-
+      onClick={onClick}
+      className="grid w-full cursor-pointer items-center border-l-4 border-l-transparent px-4 py-2.5 transition-colors hover:border-l-primary hover:bg-secondary/40"
+      style={{ gridTemplateColumns }}
+    >
+      {columnOrder.map((column) => (
+        <div key={column} className="min-w-0 px-2">
+          {renderCell(column)}
+        </div>
+      ))}
     </div>
   );
 }
