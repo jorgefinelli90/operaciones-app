@@ -63,7 +63,7 @@ export function NewCaseModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 
-      <div className="w-full max-w-lg rounded-xl bg-white p-6">
+      <div className="w-full max-w-lg rounded-lg border border-[#2f2e2e] bg-card p-6">
 
         <h2 className="mb-5 text-lg font-semibold">
           Nuevo caso
@@ -82,7 +82,7 @@ export function NewCaseModal({
               onChange={(e) =>
                 setType(e.target.value as CaseType)
               }
-              className="w-full rounded border px-3 py-2"
+              className="w-full rounded border bg-background px-3 py-2"
             >
               <option value="NO_STOCK">
                 Sin stock
@@ -107,7 +107,7 @@ export function NewCaseModal({
               onChange={(e) =>
                 setTitle(e.target.value)
               }
-              className="w-full rounded border px-3 py-2"
+              className="w-full rounded border bg-background px-3 py-2"
             />
 
           </div>
@@ -124,7 +124,7 @@ export function NewCaseModal({
               onChange={(e) =>
                 setDescription(e.target.value)
               }
-              className="w-full rounded border px-3 py-2"
+              className="w-full rounded border bg-background px-3 py-2"
             />
 
           </div>
@@ -135,7 +135,7 @@ export function NewCaseModal({
 
           <button
             onClick={onClose}
-            className="rounded border px-4 py-2"
+            className="rounded border bg-background px-4 py-2"
           >
             Cancelar
           </button>
