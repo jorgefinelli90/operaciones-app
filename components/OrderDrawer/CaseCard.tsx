@@ -36,7 +36,7 @@ export function CaseCard({
     <button
       type="button"
       onClick={() => onOpen?.(item)}
-      className="w-full rounded-lg border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-300 hover:shadow-sm"
+      className="w-full rounded-lg border border-border bg-card p-4 text-left transition hover:border-border/80 hover:shadow-sm"
     >
       <div className="flex items-start justify-between">
 
