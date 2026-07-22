@@ -100,7 +100,7 @@ export function OrderRow({
         );
       case "amount":
         return (
-          <div className="min-w-0 whitespace-nowrap text-right font-semibold tabular-nums">
+          <div className="min-w-0 whitespace-nowrap text-right font-semibold tabular-nums text-xs">
             {amount}
           </div>
         );
