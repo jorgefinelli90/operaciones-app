@@ -39,7 +39,7 @@ export function OrdersFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por pedido, cliente o mail..."
-          className="w-full rounded-lg border border-border bg-input py-2 pl-10 pr-4 text-sm outline-none focus:border-primary"
+          className="w-full rounded-lg border border-border mt-3 bg-input py-2 pl-10 pr-4 text-sm outline-none focus:border-primary"
         />
       </div>
 

@@ -31,6 +31,10 @@ export function ShippingSection({
   onWarehouseStatusUpdated,
 }: ShippingSectionProps) {
   const [status, setStatus] = useState(order?.warehouse_status ?? "Pendiente");
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     setStatus(order?.warehouse_status ?? "Pendiente");
@@ -64,10 +68,16 @@ export function ShippingSection({
     try {
       await updateWarehouseStatus(order.id, status);
       onWarehouseStatusUpdated(order.id, status);
-      alert("Estado actualizado correctamente.");
+      setMessage({
+        type: "success",
+        text: "Estado actualizado correctamente.",
+      });
     } catch (error) {
       console.error(error);
-      alert("Error al actualizar el estado.");
+      setMessage({
+        type: "error",
+        text: "Error al actualizar el estado.",
+      });
     }
   };
 
@@ -90,6 +100,18 @@ export function ShippingSection({
         <TimelineStatus value={status} steps={steps} onChange={setStatus} />
 
         <PrimaryButton onClick={handleSave}>Guardar Estado</PrimaryButton>
+
+        {message && (
+          <div
+            className={`rounded-md border px-4 py-3 text-sm ${
+              message.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
       </div>
     </SectionCard>
   );
