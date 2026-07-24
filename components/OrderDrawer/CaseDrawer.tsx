@@ -1,7 +1,7 @@
 "use client";
 
 import { CaseActions } from "./CaseActions";
-
+import { Accordion } from "@/components/ui/Accordion";
 import type { OrderCase } from "@/lib/cases/repository";
 import { CaseTimeline } from "./CaseTimeline";
 interface Props {
@@ -54,70 +54,77 @@ export function CaseDrawer({
           </button>
         </header>
 
-        <div className="flex-1 space-y-8 overflow-y-auto p-6">
-          <section>
-            <h3 className="mb-3 font-semibold">
-              Estado
-            </h3>
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">
 
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[item.status]}`}
-            >
-              {item.status.replaceAll("_", " ")}
-            </span>
-          </section>
+  <section className="rounded-xl border border-border p-5">
 
-          <section>
-            <h3 className="mb-3 font-semibold">
-              Título
-            </h3>
+    <div className="flex items-center justify-between">
 
-            <p>{item.title || "-"}</p>
-          </section>
+      <div>
 
-          <section>
-            <h3 className="mb-3 font-semibold">
-              Descripción
-            </h3>
+        <h2 className="text-xl font-semibold">
+          {item.title || "Caso"}
+        </h2>
 
-            <p className="whitespace-pre-wrap">
-              {item.description || "-"}
-            </p>
-          </section>
+        <p className="mt-1 text-sm text-neutral-500">
+          {item.type.replaceAll("_", " ")}
+        </p>
 
-          <section>
-            <h3 className="mb-3 font-semibold">
-              Timeline
-            </h3>
+      </div>
 
-            <CaseTimeline
-    caseId={item.id}
-/>
-          </section>
+      <span
+        className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[item.status]}`}
+      >
+        {item.status.replaceAll("_", " ")}
+      </span>
 
-          <section>
-            <h3 className="mb-3 font-semibold">
-              Comentarios
-            </h3>
+    </div>
 
-            <div className="rounded-lg border border-dashed p-5 text-sm text-neutral-500">
-              Próximamente podrán agregarse comentarios.
-            </div>
-          </section>
+    {item.description && (
+      <p className="mt-4 whitespace-pre-wrap text-sm text-neutral-600">
+        {item.description}
+      </p>
+    )}
 
-          <section>
-            <h3 className="mb-3 font-semibold">
-              Acciones disponibles
-            </h3>
+  </section>
 
-            <CaseActions
-              item={item}
-              onExecuted={() => {
-                window.location.reload();
-              }}
-            />
-          </section>
-        </div>
+  <Accordion
+    title="Acciones disponibles"
+    defaultOpen
+  >
+    <CaseActions
+      item={item}
+      onExecuted={() =>
+        window.location.reload()
+      }
+    />
+  </Accordion>
+
+  <Accordion
+    title="Timeline"
+  >
+    <CaseTimeline
+      caseId={item.id}
+    />
+  </Accordion>
+
+  <Accordion
+    title="Comentarios"
+  >
+    <div className="rounded-lg border border-dashed p-5 text-sm text-neutral-500">
+      Próximamente podrán agregarse comentarios.
+    </div>
+  </Accordion>
+
+  <Accordion
+    title="Archivos"
+  >
+    <div className="rounded-lg border border-dashed p-5 text-sm text-neutral-500">
+      Todavía no hay archivos.
+    </div>
+  </Accordion>
+
+</div>
       </aside>
     </>
   );

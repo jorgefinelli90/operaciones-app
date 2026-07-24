@@ -13,3 +13,5 @@ export interface OrderItem {
 
   productType: string;
 }
+
+export type OrderItemInput = Omit<OrderItem, "id">;

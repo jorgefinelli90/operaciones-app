@@ -1,12 +1,12 @@
 import { supabase } from "@/lib/supabase/client";
-import type { OrderItem } from "@/types/orderItem";
+import type { OrderItemInput } from "@/types/orderItem";
 
 export interface ImportItemsResult {
   inserted: number;
 }
 
 export async function importOrderItems(
-  items: OrderItem[],
+  items: OrderItemInput[],
 ): Promise<ImportItemsResult> {
   if (items.length === 0) {
     return {

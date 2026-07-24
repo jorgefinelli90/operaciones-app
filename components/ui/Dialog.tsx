@@ -23,9 +23,9 @@ export function Dialog({
       onOpenChange={onOpenChange}
     >
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/70" />
 
-        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl">
+        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-black/40 p-6 shadow-xl">
           <div className="mb-5 flex items-center justify-between">
             <DialogPrimitive.Title className="text-lg font-semibold">
               {title}

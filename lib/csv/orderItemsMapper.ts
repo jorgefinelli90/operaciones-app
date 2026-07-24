@@ -1,4 +1,4 @@
-import type { OrderItem } from "@/types/orderItem";
+import type { OrderItemInput } from "@/types/orderItem";
 
 function parseNumber(value?: string): number {
   if (!value) return 0;
@@ -12,9 +12,9 @@ function parseNumber(value?: string): number {
 
 export function mapOrderItems(
   rows: Record<string, string>[]
-): OrderItem[] {
+): OrderItemInput[] {
 
-  const items: OrderItem[] = [];
+  const items: OrderItemInput[] = [];
 
   let currentOrderId = "";
 

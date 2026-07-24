@@ -77,20 +77,54 @@ export function ActionModal({
           onOpenChange={(v) => !v && onClose()}
           title="Confirmar acción"
         >
-          <div className="space-y-4">
-
-            <p>
+          <div className="space-y-6">
+            <p className="text-sm leading-6 text-neutral-300">
               ¿Deseás ejecutar esta acción?
+              <br />
+              Esta operación no podrá deshacerse.
             </p>
 
-            <button
-              disabled={loading}
-              onClick={() => execute()}
-              className="rounded bg-black px-4 py-2 text-white"
-            >
-              Confirmar
-            </button>
+            <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="
+                  h-10
+                  rounded-lg
+                  border
+                  border-neutral-700
+                  px-5
+                  text-sm
+                  font-medium
+                  text-neutral-300
+                  transition-colors
+                  hover:bg-neutral-800
+                "
+              >
+                Cancelar
+              </button>
 
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => execute()}
+                className="
+                  h-10
+                  rounded-lg
+                  bg-black
+                  px-5
+                  text-sm
+                  font-medium
+                  text-white
+                  transition-colors
+                  hover:bg-neutral-800
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                {loading ? "Ejecutando..." : "Confirmar"}
+              </button>
+            </div>
           </div>
         </Dialog>
       );

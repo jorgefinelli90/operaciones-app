@@ -1,14 +1,14 @@
 "use client";
 
 import type { OrderImport } from "@/types/orders";
-import type { OrderItem } from "@/types/orderItem";
+import type { OrderItemInput } from "@/types/orderItem";
 
 import { formatDate } from "@/lib/utils/date";
 
 interface CSVPreviewProps {
   fileName: string;
   orders: OrderImport[];
-  items: OrderItem[];
+  items: OrderItemInput[];
 }
 
 export function CSVPreview({

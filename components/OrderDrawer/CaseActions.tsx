@@ -16,15 +16,20 @@ interface Props {
 }
 
 const COLOR_CLASSES = {
-  gray: "border-gray-300 bg-white hover:bg-gray-50",
+  gray:
+    "border-neutral-700 bg-neutral-900 hover:bg-neutral-800 text-white",
 
-  blue: "border-blue-300 bg-blue-50 hover:bg-blue-100",
+  blue:
+    "border-blue-800 bg-blue-950/40 hover:bg-blue-900/50 text-white",
 
-  green: "border-green-300 bg-green-50 hover:bg-green-100",
+  green:
+    "border-emerald-800 bg-emerald-950/40 hover:bg-emerald-900/50 text-white",
 
-  orange: "border-orange-300 bg-orange-50 hover:bg-orange-100",
+  orange:
+    "border-amber-800 bg-amber-950/40 hover:bg-amber-900/50 text-white",
 
-  red: "border-red-300 bg-red-50 hover:bg-red-100",
+  red:
+    "border-red-800 bg-red-950/40 hover:bg-red-900/50 text-white",
 };
 
 export function CaseActions({
@@ -77,9 +82,55 @@ return (
             key={action}
             disabled={loading !== null}
             onClick={() => handleAction(action)}
-            className={`flex items-start gap-3 rounded-lg border p-4 text-left transition ${COLOR_CLASSES[config.color]}`}
+            className={`
+              group
+              rounded-xl
+              border
+              p-4
+              text-left
+              transition-all
+              duration-200
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              ${COLOR_CLASSES[config.color]}
+            `}
           >
-            ...
+            <div className="flex items-start gap-4">
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-black/20
+                  ring-1
+                  ring-white/10
+                "
+              >
+                {loading === action ? (
+                  <Loader2
+                    size={18}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Icon size={18} />
+                )}
+              </div>
+
+              <div className="flex-1">
+                <div className="font-medium text-white">
+                  {config.label}
+                </div>
+
+                {config.description && (
+                  <p className="mt-1 text-sm text-neutral-400">
+                    {config.description}
+                  </p>
+                )}
+              </div>
+            </div>
           </button>
         );
       })}

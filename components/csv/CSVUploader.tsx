@@ -11,7 +11,7 @@ import { importOrders } from "@/lib/csv/importer";
 import { importOrderItems } from "@/lib/supabase/importOrderItems";
 
 import type { OrderImport } from "@/types/orders";
-import type { OrderItem } from "@/types/orderItem";
+import type { OrderItemInput } from "@/types/orderItem";
 
 import { CSVDropzone } from "./CSVDropzone";
 import { CSVPreview } from "./CSVPreview";
@@ -26,7 +26,7 @@ export function CSVUploader({
   onImportFinished,
 }: CSVUploaderProps) {
   const [orders, setOrders] = useState<OrderImport[]>([]);
-  const [items, setItems] = useState<OrderItem[]>([]);
+  const [items, setItems] = useState<OrderItemInput[]>([]);
 
   const [fileName, setFileName] = useState("");
 
