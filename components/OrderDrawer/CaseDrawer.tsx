@@ -1,9 +1,15 @@
 "use client";
 
-import { CaseActions } from "./CaseActions";
+import { useState } from "react";
+
 import { Accordion } from "@/components/ui/Accordion";
-import type { OrderCase } from "@/lib/cases/repository";
+
+import { CaseActions } from "./CaseActions";
+import { CaseComments } from "./CaseComments";
 import { CaseTimeline } from "./CaseTimeline";
+
+import type { OrderCase } from "@/lib/cases/repository";
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -24,6 +30,8 @@ export function CaseDrawer({
   onClose,
   item,
 }: Props) {
+  const [refreshKey, setRefreshKey] = useState(0);
+
   if (!open || !item) return null;
 
   return (
@@ -56,69 +64,65 @@ export function CaseDrawer({
 
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
 
-  <section className="rounded-xl border border-border p-5">
+          <section className="rounded-xl border border-border p-5">
 
-    <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
 
-      <div>
+              <div>
 
-        <h2 className="text-xl font-semibold">
-          {item.title || "Caso"}
-        </h2>
+                <h2 className="text-xl font-semibold">
+                  {item.title || "Caso"}
+                </h2>
 
-        <p className="mt-1 text-sm text-neutral-500">
-          {item.type.replaceAll("_", " ")}
-        </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {item.type.replaceAll("_", " ")}
+                </p>
 
-      </div>
+              </div>
 
-      <span
-        className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[item.status]}`}
-      >
-        {item.status.replaceAll("_", " ")}
-      </span>
+              <span
+                className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[item.status]}`}
+              >
+                {item.status.replaceAll("_", " ")}
+              </span>
 
-    </div>
+            </div>
 
-    {item.description && (
-      <p className="mt-4 whitespace-pre-wrap text-sm text-neutral-600">
-        {item.description}
-      </p>
-    )}
+            {item.description && (
+              <p className="mt-4 whitespace-pre-wrap text-sm text-neutral-600">
+                {item.description}
+              </p>
+            )}
 
-  </section>
+          </section>
 
-  <Accordion
-    title="Acciones disponibles"
-    defaultOpen
-  >
-    <CaseActions
-      item={item}
-      onExecuted={() =>
-        window.location.reload()
-      }
-    />
-  </Accordion>
+          <Accordion
+            title="Acciones disponibles"
+            defaultOpen
+          >
+            <CaseActions
+              item={item}
+              onExecuted={() => window.location.reload()}
+            />
+          </Accordion>
 
-  <Accordion
-    title="Timeline"
-  >
-    <CaseTimeline
-      caseId={item.id}
-    />
-  </Accordion>
+          <Accordion title="Timeline">
+            <CaseTimeline
+              key={refreshKey}
+              caseId={item.id}
+            />
+          </Accordion>
 
-  <Accordion
-    title="Comentarios"
-  >
-    <div className="rounded-lg border border-dashed p-5 text-sm text-neutral-500">
-      Próximamente podrán agregarse comentarios.
-    </div>
-  </Accordion>
+          <Accordion title="Comentarios">
+            <CaseComments
+              caseId={item.id}
+              onCommentAdded={() =>
+                setRefreshKey((v) => v + 1)
+              }
+            />
+          </Accordion>
 
-
-
-</div>
+        </div>
       </aside>
     </>
   );
