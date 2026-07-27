@@ -5,6 +5,12 @@ import type {
   CaseType,
 } from "./types";
 
+export type CasePriority =
+    | "LOW"
+    | "NORMAL"
+    | "HIGH"
+    | "URGENT";
+
 export interface OrderCase {
   id: number;
 
@@ -33,12 +39,14 @@ export interface OrderCase {
   closed_at: string | null;
 }
 
+import type { CaseEventAction, CaseAction } from "./types";
+
 export interface OrderCaseEvent {
   id: number;
 
   case_id: number;
 
-  action: string;
+  action: CaseAction | CaseEventAction;
 
   from_status: string | null;
 
@@ -96,6 +104,8 @@ export async function createCase(input: {
 
   type: CaseType;
 
+  priority?: CasePriority;
+
   title?: string;
 
   description?: string;
@@ -111,6 +121,8 @@ export async function createCase(input: {
 
       type: input.type,
 
+      priority: input.priority ?? "NORMAL",
+
       title: input.title ?? null,
 
       description: input.description ?? null,
@@ -122,7 +134,15 @@ export async function createCase(input: {
 
   if (error) throw error;
 
-  return data as OrderCase;
+  const newCase = data as OrderCase;
+
+  await createEvent({
+    caseId: newCase.id,
+    action: "CASE_CREATED",
+    createdBy: input.createdBy,
+  });
+
+  return newCase;
 }
 
 export async function updateCaseStatus(
@@ -152,7 +172,7 @@ export async function updateCaseStatus(
 export async function createEvent(input: {
   caseId: number;
 
-  action: string;
+  action: CaseEventAction;
 
   fromStatus?: string;
 
@@ -197,7 +217,7 @@ export async function getEvents(caseId: number) {
   return data as OrderCaseEvent[];
 }
 
-export async function createComment(input: {
+export async function addComment(input: {
   caseId: number;
 
   comment: string;
@@ -221,6 +241,15 @@ export async function createComment(input: {
     .single();
 
   if (error) throw error;
+
+  await createEvent({
+    caseId: input.caseId,
+    action: "COMMENT_ADDED",
+    payload: {
+      comment: input.comment,
+    },
+    createdBy: input.createdBy,
+  });
 
   return data as OrderCaseComment;
 }

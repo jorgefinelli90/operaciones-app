@@ -116,13 +116,7 @@ export function CaseDrawer({
     </div>
   </Accordion>
 
-  <Accordion
-    title="Archivos"
-  >
-    <div className="rounded-lg border border-dashed p-5 text-sm text-neutral-500">
-      Todavía no hay archivos.
-    </div>
-  </Accordion>
+
 
 </div>
       </aside>

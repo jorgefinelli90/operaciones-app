@@ -1,6 +1,10 @@
 export type CaseType =
   | "NO_STOCK"
-  | "CHANGE";
+  | "CHANGE"
+  | "RETURN"
+  | "INVOICE"
+  | "CHARGEBACK"
+  | "CLAIM";
 
 export type CaseStatus =
   | "OPEN"
@@ -21,3 +25,10 @@ export type CaseAction =
   | "SHIP_PRODUCT"
   | "CLOSE_CASE"
   | "CANCEL_CASE";
+
+  export type CaseEventAction =
+  | "CASE_CREATED"
+  | "STATUS_CHANGED"
+  | "COMMENT_ADDED"
+  | "ASSIGNED"
+  | "ACTION_EXECUTED";

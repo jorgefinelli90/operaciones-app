@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import {
   Clock3,
   Circle,
-  MessageSquare,
 } from "lucide-react";
+
+import { EVENT_LABELS } from "@/lib/cases/eventLabels";
+import { STATUS_LABELS } from "@/lib/cases/statusLabels";
+
+import type { CaseStatus } from "@/lib/cases/types";
 
 import {
   getEvents,
@@ -14,22 +18,6 @@ import {
 
 interface Props {
   caseId: number;
-}
-
-function formatAction(action: string) {
-  return action
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
-}
-
-function formatStatus(status: string | null) {
-  if (!status) return "-";
-
-  return status
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 export function CaseTimeline({
@@ -74,93 +62,65 @@ export function CaseTimeline({
 
   return (
     <div className="space-y-4">
+      {events.map((event, index) => {
+        const fromStatus = event.from_status as CaseStatus | null;
+        const toStatus = event.to_status as CaseStatus | null;
 
-      {events.map((event, index) => (
-        <div
-          key={event.id}
-          className="flex gap-4"
-        >
-          <div className="flex flex-col items-center">
+        return (
+          <div
+            key={event.id}
+            className="flex gap-4"
+          >
+            <div className="flex flex-col items-center">
+              <Circle
+                size={12}
+                className="mt-1 fill-current"
+              />
 
-            <Circle
-              size={12}
-              className="mt-1 fill-current"
-            />
+              {index !== events.length - 1 && (
+                <div className="mt-2 h-full w-px bg-neutral-300" />
+              )}
+            </div>
 
-            {index !== events.length - 1 && (
-              <div className="mt-2 h-full w-px bg-neutral-300" />
-            )}
+            <div className="flex-1 rounded-lg border bg-[#262626] p-4">
 
-          </div>
+              <div className="flex items-center justify-between">
 
-          <div className="flex-1 rounded-lg border bg-[#262626] p-4">
+                <div className="font-medium">
+                  {EVENT_LABELS[event.action]}
+                </div>
 
-            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-xs text-neutral-500">
+                  <Clock3 size={14} />
 
-              <div className="font-medium">
-                {formatAction(event.action)}
+                  {new Date(
+                    event.created_at,
+                  ).toLocaleString("es-AR")}
+                </div>
+
               </div>
 
-              <div className="flex items-center gap-1 text-xs text-neutral-500">
+              {fromStatus && toStatus && (
+                <div className="mt-2 text-sm text-neutral-500">
 
-                <Clock3 size={14} />
+                  <strong>
+                    Estado:
+                  </strong>{" "}
 
-                {new Date(
-                  event.created_at,
-                ).toLocaleString("es-AR")}
+                  {STATUS_LABELS[fromStatus]}
 
-              </div>
+                  {" → "}
+
+                  {STATUS_LABELS[toStatus]}
+
+                </div>
+              )}
 
             </div>
 
-            {(event.from_status ||
-              event.to_status) && (
-              <div className="mt-2 text-sm text-neutral-600">
-
-                <strong>
-                  Estado:
-                </strong>{" "}
-
-                {formatStatus(
-                  event.from_status,
-                )}
-
-                {" → "}
-
-                {formatStatus(
-                  event.to_status,
-                )}
-
-              </div>
-            )}
-
-            {event.payload && (
-              <div className="mt-3 rounded bg-card p-3">
-
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-neutral-500">
-
-                  <MessageSquare size={14} />
-
-                  Payload
-
-                </div>
-
-                <pre className="overflow-x-auto text-xs">
-                  {JSON.stringify(
-                    event.payload,
-                    null,
-                    2,
-                  )}
-                </pre>
-
-              </div>
-            )}
-
           </div>
-
-        </div>
-      ))}
-
+        );
+      })}
     </div>
   );
 }
