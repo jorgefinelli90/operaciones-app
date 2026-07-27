@@ -28,6 +28,7 @@ export async function importOrders(
 
     customer_firstname: order.customerFirstname,
     customer_lastname: order.customerLastname,
+    customer_name: order.customerName,
     customer_phone: order.customerPhone,
     customer_email: order.customerEmail,
 
@@ -39,6 +40,7 @@ export async function importOrders(
     payment_cc_owner: order.paymentOwner,
     payment_cc_type: order.paymentType,
     payment_reference: order.paymentReference,
+    payment_additional_information: order.paymentAdditionalInformation,
     shipping_method: order.shippingMethod,
     shipping_description: order.shippingDescription,
     magento_status: order.magentoStatus,
@@ -46,11 +48,18 @@ export async function importOrders(
 
     grand_total: order.grandTotal,
 
-    tracking_number: order.trackingNumber,
-
-    billing_requested: order.billingRequested,
-    billing_business_name: order.billingBusinessName,
-    billing_cuit: order.billingCuit,
+    ...(order.trackingNumber !== undefined && {
+      tracking_number: order.trackingNumber,
+    }),
+    ...(order.billingRequested !== undefined && {
+      billing_requested: order.billingRequested,
+    }),
+    ...(order.billingBusinessName !== undefined && {
+      billing_business_name: order.billingBusinessName,
+    }),
+    ...(order.billingCuit !== undefined && {
+      billing_cuit: order.billingCuit,
+    }),
   }));
 
   console.log("Primer registro a insertar:");

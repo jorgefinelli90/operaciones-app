@@ -5,6 +5,7 @@ export interface OrderImport {
 
   customerFirstname: string;
   customerLastname: string;
+  customerName: string;
   customerPhone: string;
   customerEmail: string;
 
@@ -20,17 +21,18 @@ export interface OrderImport {
   paymentOwner: string;
   paymentType: string;
   paymentReference: string;
+  paymentAdditionalInformation?: string | null;
 
   magentoStatus: string;
   warehouseStatus: string;
 
   grandTotal: number;
 
-  trackingNumber: string | null;
+  trackingNumber?: string | null;
 
-  billingRequested: boolean;
-  billingBusinessName: string;
-  billingCuit: string;
+  billingRequested?: boolean;
+  billingBusinessName?: string;
+  billingCuit?: string;
 }
 
 export interface Order {

@@ -8,7 +8,7 @@ function parseCurrency(value: string): number {
 
 const STATUS_MAP: Record<string, string> = {
   processing: "PROCESSING",
-  complete: "DESPACHADO",
+  complete: "COMPLETO",
   pickedup: "RETIRADO",
   readytopickup: "LISTO PARA RETIRAR",
   canceled: "CANCELADO",
@@ -39,6 +39,12 @@ export function mapOrders(rows: Record<string, string>[]): OrderImport[] {
 
     const magentoStatus = row["sales_order_grid.status"]?.trim() || "";
 
+    const customerFirstname =
+      row["sales_order_shipping_address.firstname"]?.trim() || "";
+
+    const customerLastname =
+      row["sales_order_shipping_address.lastname"]?.trim() || "";
+
     const purchaseDate = row["created_at"]?.trim();
 
     let formattedPurchaseDate: string | null = null;
@@ -56,11 +62,11 @@ export function mapOrders(rows: Record<string, string>[]): OrderImport[] {
 
       purchaseDate: formattedPurchaseDate,
 
-      customerFirstname:
-        row["sales_order_shipping_address.firstname"]?.trim() || "",
+      customerFirstname,
 
-      customerLastname:
-        row["sales_order_shipping_address.lastname"]?.trim() || "",
+      customerLastname,
+
+      customerName: `${customerFirstname} ${customerLastname}`.trim(),
 
       customerPhone:
         row["sales_order_shipping_address.telephone"]?.trim() || "",
@@ -87,17 +93,15 @@ export function mapOrders(rows: Record<string, string>[]): OrderImport[] {
 
       paymentReference: row["sales_order_payment.po_number"]?.trim() || "",
 
+      paymentAdditionalInformation:
+        row["sales_order_payment.additional_information"]?.trim() || null,
+
       magentoStatus,
 
       warehouseStatus: getWarehouseStatus(magentoStatus),
 
       grandTotal: parseCurrency(row["sales_order_grid.grand_total"] || "0"),
 
-      trackingNumber: null,
-
-      billingRequested: false,
-      billingBusinessName: "",
-      billingCuit: "",
     });
   }
 

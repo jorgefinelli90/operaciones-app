@@ -16,6 +16,7 @@ begin
     purchase_date,
     customer_firstname,
     customer_lastname,
+    customer_name,
     customer_phone,
     customer_email,
     delivery_address,
@@ -25,6 +26,7 @@ begin
     payment_cc_owner,
     payment_cc_type,
     payment_reference,
+    payment_additional_information,
     shipping_method,
     shipping_description,
     magento_status,
@@ -40,6 +42,7 @@ begin
     nullif(row_data.purchase_date, '')::timestamptz,
     row_data.customer_firstname,
     row_data.customer_lastname,
+    row_data.customer_name,
     row_data.customer_phone,
     row_data.customer_email,
     row_data.delivery_address,
@@ -49,6 +52,7 @@ begin
     row_data.payment_cc_owner,
     row_data.payment_cc_type,
     row_data.payment_reference,
+    row_data.payment_additional_information,
     row_data.shipping_method,
     row_data.shipping_description,
     row_data.magento_status,
@@ -63,6 +67,7 @@ begin
     purchase_date text,
     customer_firstname text,
     customer_lastname text,
+    customer_name text,
     customer_phone text,
     customer_email text,
     delivery_address text,
@@ -72,6 +77,7 @@ begin
     payment_cc_owner text,
     payment_cc_type text,
     payment_reference text,
+    payment_additional_information text,
     shipping_method text,
     shipping_description text,
     magento_status text,
@@ -86,6 +92,7 @@ begin
     purchase_date = excluded.purchase_date,
     customer_firstname = excluded.customer_firstname,
     customer_lastname = excluded.customer_lastname,
+    customer_name = excluded.customer_name,
     customer_phone = excluded.customer_phone,
     customer_email = excluded.customer_email,
     delivery_address = excluded.delivery_address,
@@ -95,15 +102,25 @@ begin
     payment_cc_owner = excluded.payment_cc_owner,
     payment_cc_type = excluded.payment_cc_type,
     payment_reference = excluded.payment_reference,
+    payment_additional_information = coalesce(
+      excluded.payment_additional_information,
+      orders.payment_additional_information
+    ),
     shipping_method = excluded.shipping_method,
     shipping_description = excluded.shipping_description,
     magento_status = excluded.magento_status,
     warehouse_status = excluded.warehouse_status,
     grand_total = excluded.grand_total,
-    tracking_number = excluded.tracking_number,
-    billing_requested = excluded.billing_requested,
-    billing_business_name = excluded.billing_business_name,
-    billing_cuit = excluded.billing_cuit;
+    tracking_number = coalesce(excluded.tracking_number, orders.tracking_number),
+    billing_requested = coalesce(
+      excluded.billing_requested,
+      orders.billing_requested
+    ),
+    billing_business_name = coalesce(
+      excluded.billing_business_name,
+      orders.billing_business_name
+    ),
+    billing_cuit = coalesce(excluded.billing_cuit, orders.billing_cuit);
 
   get diagnostics orders_count = row_count;
 

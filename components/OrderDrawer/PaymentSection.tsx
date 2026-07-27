@@ -72,6 +72,17 @@ export function PaymentSection({ order }: PaymentSectionProps) {
           value={translatePayment(order.payment_method)}
         />
 
+        <Field label="Titular" value={order.payment_cc_owner} />
+
+        <Field label="Tipo" value={order.payment_cc_type} />
+
+        <Field label="Referencia" value={order.payment_reference} />
+
+        <Field
+          label="Información adicional"
+          value={order.payment_additional_information}
+        />
+
         <Field label="Total" value={formatCurrency(order.grand_total)} />
 
         <Field

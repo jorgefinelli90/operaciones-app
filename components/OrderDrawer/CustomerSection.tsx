@@ -64,6 +64,11 @@ export function CustomerSection({
             value={order.customer_email}
           />
 
+          <Field
+            label="Teléfono"
+            value={order.customer_phone}
+          />
+
         </div>
 
         <div>

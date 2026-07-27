@@ -68,7 +68,13 @@ export default async function OrderDetailPage({ params }: Props) {
     <h2 className="mb-4 text-lg font-semibold">Cliente</h2>
 
     <div className="space-y-3">
-      <Info label="Nombre" value={order.customer_name} />
+      <Info
+        label="Nombre"
+        value={
+          order.customer_name ||
+          `${order.customer_firstname} ${order.customer_lastname}`.trim()
+        }
+      />
       <Info label="Mail" value={order.customer_email} />
       <Info label="Teléfono" value="-" />
     </div>
