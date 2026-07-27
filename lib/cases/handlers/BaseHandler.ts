@@ -1,36 +1,18 @@
-import {
-  createEvent,
-  getCase,
-  updateCaseStatus,
-} from "../repository";
+import { createEvent, getCase, updateCaseStatus } from "../repository";
 
 import { getNextStatus } from "../transitions";
 
-import type {
-  ActionHandler,
-  ActionHandlerContext,
-} from "./types";
+import type { ActionHandler, ActionHandlerContext } from "./types";
 
-export abstract class BaseHandler
-  implements ActionHandler
-{
-  async execute(
-    context: ActionHandlerContext,
-  ): Promise<void> {
-    const currentCase = await getCase(
-      context.caseId,
-    );
+export abstract class BaseHandler implements ActionHandler {
+  async execute(context: ActionHandlerContext): Promise<void> {
+    const currentCase = await getCase(context.caseId);
 
-    const nextStatus = getNextStatus(
-      context.action,
-    );
+    const nextStatus = getNextStatus(context.action);
 
     await this.beforeExecute(context);
 
-    await updateCaseStatus(
-      context.caseId,
-      nextStatus,
-    );
+    await updateCaseStatus(context.caseId, nextStatus, context.createdBy);
 
     await createEvent({
       caseId: context.caseId,
@@ -49,11 +31,7 @@ export abstract class BaseHandler
     await this.afterExecute(context);
   }
 
-  protected async beforeExecute(
-    _context: ActionHandlerContext,
-  ) {}
+  protected async beforeExecute(_context: ActionHandlerContext) {}
 
-  protected async afterExecute(
-    _context: ActionHandlerContext,
-  ) {}
+  protected async afterExecute(_context: ActionHandlerContext) {}
 }

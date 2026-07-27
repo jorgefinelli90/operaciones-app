@@ -25,32 +25,21 @@ const STATUS_COLORS = {
   CANCELLED: "bg-red-100 text-red-800",
 } as const;
 
-export function CaseDrawer({
-  open,
-  onClose,
-  item,
-}: Props) {
+export function CaseDrawer({ open, onClose, item }: Props) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   if (!open || !item) return null;
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40 bg-black/40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
 
       <aside className="fixed right-0 top-0 z-50 flex h-screen w-[650px] flex-col border-l border-border bg-background shadow-xl">
         <header className="flex items-center justify-between border-b border-border p-5">
           <div>
-            <h2 className="text-lg font-semibold">
-              Caso #{item.id}
-            </h2>
+            <h2 className="text-lg font-semibold">Caso #{item.id}</h2>
 
-            <p className="text-sm text-neutral-500">
-              {item.type}
-            </p>
+            <p className="text-sm text-neutral-500">{item.type}</p>
           </div>
 
           <button
@@ -63,13 +52,9 @@ export function CaseDrawer({
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
-
           <section className="rounded-xl border border-border p-5">
-
             <div className="flex items-center justify-between">
-
               <div>
-
                 <h2 className="text-xl font-semibold">
                   {item.title || "Caso"}
                 </h2>
@@ -77,7 +62,6 @@ export function CaseDrawer({
                 <p className="mt-1 text-sm text-neutral-500">
                   {item.type.replaceAll("_", " ")}
                 </p>
-
               </div>
 
               <span
@@ -85,7 +69,6 @@ export function CaseDrawer({
               >
                 {item.status.replaceAll("_", " ")}
               </span>
-
             </div>
 
             {item.description && (
@@ -93,13 +76,9 @@ export function CaseDrawer({
                 {item.description}
               </p>
             )}
-
           </section>
 
-          <Accordion
-            title="Acciones disponibles"
-            defaultOpen
-          >
+          <Accordion title="Acciones disponibles" defaultOpen>
             <CaseActions
               item={item}
               onExecuted={() => window.location.reload()}
@@ -107,21 +86,23 @@ export function CaseDrawer({
           </Accordion>
 
           <Accordion title="Timeline">
-            <CaseTimeline
-              key={refreshKey}
-              caseId={item.id}
-            />
+            <CaseTimeline key={refreshKey} caseId={item.id} />
           </Accordion>
 
-          <Accordion title="Comentarios">
+          <Accordion
+            title="Comentarios"
+            right={
+              <span
+                className="flex h-3 w-3 animate-pulse rounded-full bg-red-500"
+                title="Hay comentarios"
+              />
+            }
+          >
             <CaseComments
               caseId={item.id}
-              onCommentAdded={() =>
-                setRefreshKey((v) => v + 1)
-              }
+              onCommentAdded={() => setRefreshKey((v) => v + 1)}
             />
           </Accordion>
-
         </div>
       </aside>
     </>

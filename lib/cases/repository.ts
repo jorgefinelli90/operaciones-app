@@ -104,7 +104,7 @@ export async function createCase(input: {
 
   type: CaseType;
 
-  priority?: CasePriority;
+  priority: CasePriority;
 
   title?: string;
 
@@ -148,7 +148,10 @@ export async function createCase(input: {
 export async function updateCaseStatus(
   caseId: number,
   status: CaseStatus,
+  createdBy?: string,
 ) {
+  const currentCase = await getCase(caseId);
+
   const values: Record<string, unknown> = {
     status,
   };
@@ -166,13 +169,21 @@ export async function updateCaseStatus(
 
   if (error) throw error;
 
+  await createEvent({
+    caseId,
+    action: "STATUS_CHANGED",
+    fromStatus: currentCase.status,
+    toStatus: status,
+    createdBy,
+  });
+
   return data as OrderCase;
 }
 
 export async function createEvent(input: {
   caseId: number;
 
-  action: CaseEventAction;
+  action: CaseAction | CaseEventAction;
 
   fromStatus?: string;
 

@@ -19,7 +19,7 @@ export function Accordion({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="rounded-lg border border-border">
+    <section className="overflow-hidden rounded-lg border border-border">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -28,7 +28,7 @@ export function Accordion({
         <div className="flex items-center gap-2">
           <ChevronDown
             size={18}
-            className={`transition-transform ${
+            className={`transition-transform duration-200 ${
               open ? "rotate-180" : ""
             }`}
           />
@@ -38,7 +38,9 @@ export function Accordion({
           </span>
         </div>
 
-        {right}
+        <div className="flex items-center gap-2">
+          {right}
+        </div>
       </button>
 
       {open && (

@@ -24,8 +24,11 @@ const STATUS_COLORS = {
 
 const TYPE_LABELS = {
   NO_STOCK: "Sin stock",
-
   CHANGE: "Cambio",
+  RETURN: "Devolución",
+  INVOICE: "Factura",
+  CHARGEBACK: "Chargeback",
+  CLAIM: "Reclamo",
 } as const;
 
 export function CaseCard({

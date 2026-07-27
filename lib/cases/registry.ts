@@ -58,6 +58,42 @@ export const registry: Registry = {
 
     CANCELLED: [],
   },
+
+  RETURN: {
+    OPEN: [],
+    WAITING_STORE: [],
+    WAITING_CUSTOMER: [],
+    IN_PROGRESS: [],
+    RESOLVED: [],
+    CANCELLED: [],
+  },
+
+  INVOICE: {
+    OPEN: [],
+    WAITING_STORE: [],
+    WAITING_CUSTOMER: [],
+    IN_PROGRESS: [],
+    RESOLVED: [],
+    CANCELLED: [],
+  },
+
+  CHARGEBACK: {
+    OPEN: [],
+    WAITING_STORE: [],
+    WAITING_CUSTOMER: [],
+    IN_PROGRESS: [],
+    RESOLVED: [],
+    CANCELLED: [],
+  },
+
+  CLAIM: {
+    OPEN: [],
+    WAITING_STORE: [],
+    WAITING_CUSTOMER: [],
+    IN_PROGRESS: [],
+    RESOLVED: [],
+    CANCELLED: [],
+  },
 };
 
 export function getAvailableActions(
