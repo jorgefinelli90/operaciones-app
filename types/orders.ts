@@ -8,6 +8,7 @@ export interface OrderImport {
   customerPhone: string;
   customerEmail: string;
 
+  deliveryAddress: string;
   deliveryCity: string;
   deliveryProvince: string;
 

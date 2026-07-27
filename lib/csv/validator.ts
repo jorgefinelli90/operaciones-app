@@ -15,6 +15,7 @@ export const REQUIRED_COLUMNS = [
   "sales_order_shipping_address.lastname",
   "sales_order_shipping_address.telephone",
   "sales_order_shipping_address.email",
+  "sales_order_shipping_address.street",
   "sales_order_shipping_address.city",
   "sales_order_shipping_address.region",
 

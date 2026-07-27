@@ -31,6 +31,7 @@ export async function importOrders(
     customer_phone: order.customerPhone,
     customer_email: order.customerEmail,
 
+    delivery_address: order.deliveryAddress,
     delivery_city: order.deliveryCity,
     delivery_province: order.deliveryProvince,
 

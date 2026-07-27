@@ -67,6 +67,9 @@ export function mapOrders(rows: Record<string, string>[]): OrderImport[] {
 
       customerEmail: row["sales_order_shipping_address.email"]?.trim() || "",
 
+      deliveryAddress:
+        row["sales_order_shipping_address.street"]?.trim() || "",
+
       deliveryCity: row["sales_order_shipping_address.city"]?.trim() || "",
 
       deliveryProvince:
