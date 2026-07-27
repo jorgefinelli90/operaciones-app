@@ -58,7 +58,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Panel de Control</h1>
-          <p className="text-muted-foreground mt-1">Bienvenido de vuelta, Juan. Aquí está tu descripción general operativa.</p>
+          <p className="text-muted-foreground mt-1">Bienvenido de vuelta, Jorge. Aquí está tu descripción general operativa.</p>
         </div>
 
         {/* KPI Cards Grid */}

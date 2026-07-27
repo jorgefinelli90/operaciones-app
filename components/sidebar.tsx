@@ -22,7 +22,7 @@ const navigation = [
   { name: 'Panel de Control', href: '/dashboard', icon: BarChart3 },
   { name: 'Bandeja de Entrada', href: '/inbox', icon: Inbox },
   { name: 'Pedidos', href: '/orders', icon: Package },
-  { name: 'Productos Faltantes', href: '/missing-products', icon: AlertCircle },
+  { name: 'Productos Faltantes', href: '/productos-faltantes', icon: AlertCircle },
   { name: 'Devoluciones', href: '/returns', icon: RotateCw },
   { name: 'Cambios', href: '/exchanges', icon: ArrowRightLeft },
   { name: 'Notas de Crédito y Cupones', href: '/credit-notes', icon: FileText },

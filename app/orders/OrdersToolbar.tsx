@@ -1,11 +1,15 @@
 "use client";
 
 interface OrdersToolbarProps {
+  title: string;
+  subtitle: string;
   showCSVUploader: boolean;
   onToggleCSVUploader: () => void;
 }
 
 export function OrdersToolbar({
+  title,
+  subtitle,
   showCSVUploader,
   onToggleCSVUploader,
 }: OrdersToolbarProps) {
@@ -14,11 +18,11 @@ export function OrdersToolbar({
 
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          Pedidos
+          {title}
         </h1>
 
         <p className="mt-1 text-muted-foreground">
-          Gestiona y realiza el seguimiento de todos los pedidos
+          {subtitle}
         </p>
       </div>
 
