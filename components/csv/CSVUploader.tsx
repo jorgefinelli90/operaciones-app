@@ -7,8 +7,7 @@ import { validateCSV } from "@/lib/csv/validator";
 import { mapOrders } from "@/lib/csv/ordersMapper";
 import { mapOrderItems } from "@/lib/csv/orderItemsMapper";
 
-import { importOrders } from "@/lib/csv/importer";
-import { importOrderItems } from "@/lib/supabase/importOrderItems";
+import { importOrdersWithItems } from "@/lib/supabase/importOrdersWithItems";
 
 import type { OrderImport } from "@/types/orders";
 import type { OrderItemInput } from "@/types/orderItem";
@@ -81,11 +80,8 @@ export function CSVUploader({
     try {
       setLoading(true);
 
-      console.log("Subiendo Orders...");
-      await importOrders(orders);
-
-      console.log("Subiendo OrderItems...");
-      await importOrderItems(items);
+      console.log("Subiendo Orders y OrderItems...");
+      await importOrdersWithItems(orders, items);
 
       console.log("IMPORTACION FINALIZADA");
 

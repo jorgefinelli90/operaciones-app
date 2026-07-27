@@ -1,66 +1,19 @@
-import type {
-  CaseAction,
-  CaseStatus,
-} from "./types";
+import { getAvailableActions as getRegisteredActions } from "./registry";
+import type { CaseAction, CaseStatus, CaseType } from "./types";
 
 export interface WorkflowState {
   actions: CaseAction[];
 }
 
-export const WORKFLOW: Record<
-  CaseStatus,
-  WorkflowState
-> = {
-  OPEN: {
-    actions: [
-      "REQUEST_STORE",
-      "CANCEL_CASE",
-    ],
-  },
-
-  WAITING_STORE: {
-    actions: [
-      "STORE_HAS_STOCK",
-      "STORE_NO_STOCK",
-      "CANCEL_CASE",
-    ],
-  },
-
-  WAITING_CUSTOMER: {
-    actions: [
-      "CUSTOMER_ACCEPTS",
-      "CUSTOMER_REJECTS",
-      "OFFER_ALTERNATIVE",
-      "CANCEL_CASE",
-    ],
-  },
-
-  IN_PROGRESS: {
-    actions: [
-      "RESERVE_PRODUCT",
-      "SHIP_PRODUCT",
-      "CLOSE_CASE",
-      "CANCEL_CASE",
-    ],
-  },
-
-  RESOLVED: {
-    actions: [],
-  },
-
-  CANCELLED: {
-    actions: [],
-  },
-};
-
 /**
  * Devuelve las acciones disponibles
- * para un estado determinado.
+ * para un tipo y estado determinados.
  */
 export function getAvailableActions(
+  type: CaseType,
   status: CaseStatus,
 ): CaseAction[] {
-  return WORKFLOW[status]?.actions ?? [];
+  return getRegisteredActions(type, status);
 }
 
 /**
@@ -68,10 +21,11 @@ export function getAvailableActions(
  * desde el estado actual.
  */
 export function canExecuteAction(
+  type: CaseType,
   status: CaseStatus,
   action: CaseAction,
 ): boolean {
-  return getAvailableActions(status).includes(
+  return getAvailableActions(type, status).includes(
     action,
   );
 }
@@ -80,7 +34,10 @@ export function canExecuteAction(
  * Obtiene toda la definición del estado.
  */
 export function getWorkflowState(
+  type: CaseType,
   status: CaseStatus,
 ): WorkflowState {
-  return WORKFLOW[status];
+  return {
+    actions: getAvailableActions(type, status),
+  };
 }

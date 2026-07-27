@@ -36,7 +36,7 @@ export function CaseActions({
   item,
   onExecuted,
 }: Props) {
-  const actions = getAvailableActions(item.status);
+  const actions = getAvailableActions(item.type, item.status);
   const [selectedAction, setSelectedAction] =
   useState<CaseAction | null>(null);
   const [loading, setLoading] =

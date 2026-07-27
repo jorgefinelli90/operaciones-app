@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Dialog } from "@/components/ui/Dialog";
 import { AlternativeForm } from "./AlternativeForm";
+import { RequestStoreForm } from "./RequestStoreForm";
 
 import { executeAction } from "@/lib/cases/executor";
 import type { CaseAction } from "@/lib/cases/types";
@@ -56,6 +57,20 @@ export function ActionModal({
   }
 
   switch (action) {
+    case "REQUEST_STORE":
+      return (
+        <Dialog
+          open={open}
+          onOpenChange={(v) => !v && onClose()}
+          title="Solicitar al depósito"
+        >
+          <RequestStoreForm
+            loading={loading}
+            onSubmit={execute}
+          />
+        </Dialog>
+      );
+
     case "OFFER_ALTERNATIVE":
       return (
         <Dialog

@@ -40,6 +40,7 @@ export async function executeAction({
     // Validar que la acción pueda ejecutarse
     if (
       !canExecuteAction(
+        currentCase.type,
         currentCase.status,
         action,
       )
