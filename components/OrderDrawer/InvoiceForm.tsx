@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+import { toast } from "sonner";
+
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { InvoiceStatusBadge } from "@/components/ui/InvoiceStatusBadge";
+
 import { getInvoiceRequest } from "@/lib/invoices/getInvoiceRequest";
 import { saveInvoiceRequest } from "@/lib/invoices/saveInvoiceRequest";
+
 import type { InvoiceRequest } from "@/lib/invoices/types/invoice";
-import { toast } from "sonner";
-import { InvoiceStatusBadge } from "@/components/ui/InvoiceStatusBadge";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 interface InvoiceFormProps {
   orderId: string;
@@ -25,11 +28,9 @@ export function InvoiceForm({
 
   const [cuit, setCuit] = useState("");
 
-  const [businessName, setBusinessName] =
-    useState("");
+  const [businessName, setBusinessName] = useState("");
 
-  const [taxAddress, setTaxAddress] =
-    useState("");
+  const [taxAddress, setTaxAddress] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -44,14 +45,11 @@ export function InvoiceForm({
           setTaxAddress(invoice.tax_address ?? "");
         }
       } catch (err: any) {
-        console.error("ERROR COMPLETO:");
         console.error(err);
-        console.error("message:", err?.message);
-        console.error("details:", err?.details);
-        console.error("hint:", err?.hint);
-        console.error("code:", err?.code);
 
-        toast.error("No se pudo guardar la solicitud.");
+        toast.error(
+          "No se pudo cargar la solicitud de Factura A."
+        );
       } finally {
         setLoading(false);
       }
@@ -70,7 +68,7 @@ export function InvoiceForm({
       const clean = cuit.replace(/\D/g, "");
 
       if (clean.length !== 11) {
-        toast.warning("El CUIT ingresado no es válido.");
+        toast.warning("El CUIT no es válido.");
         return;
       }
 
@@ -94,21 +92,22 @@ export function InvoiceForm({
         cuit,
         business_name: businessName,
         tax_address: taxAddress,
-        status: "pending",
+        status: requested ? "pending" : "",
       };
 
       await saveInvoiceRequest(invoice);
 
-      setStatus("pending");
+      if (requested) {
+        setStatus("pending");
+      } else {
+        setStatus(undefined);
+      }
 
-      toast.success(
-        `Solicitud de Factura A guardada para el pedido ${orderId}.`
-      );
+      toast.success("Solicitud guardada.");
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2));
       console.error(err);
 
-      toast.error("No se pudo guardar la solicitud.");
+      toast.error("No se pudo guardar.");
     } finally {
       setSaving(false);
     }
@@ -116,77 +115,110 @@ export function InvoiceForm({
 
   if (loading) {
     return (
-      <div className="border-t border-border pt-5">
-        Cargando...
+      <div className="border-t border-border pt-6 text-sm text-muted-foreground">
+        Cargando facturación...
       </div>
     );
   }
 
   return (
-    <div className="border-t border-border pt-5 space-y-5">
+    <div className="mt-8 border-t border-border pt-6">
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
 
-        <span className="font-semibold">
-          Facturación
-        </span>
+        <div>
 
-        <InvoiceStatusBadge
-          status={status}
-        />
+          <h3 className="text-lg font-semibold">
+            Facturación
+          </h3>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Datos fiscales del cliente.
+          </p>
+
+        </div>
+
+        {requested && (
+          <InvoiceStatusBadge status={status} />
+        )}
 
       </div>
 
-      <label className="flex items-center gap-3 cursor-pointer">
+      <div className="mt-6 rounded-lg border border-border/50 bg-muted/20 p-4 transition-colors hover:bg-muted/30">
 
-        <input
-          type="checkbox"
-          checked={requested}
-          onChange={(e) =>
-            setRequested(e.target.checked)
-          }
-        />
+        <label className="flex cursor-pointer items-center justify-between gap-4">
 
-        <span className="font-medium">
-          Solicita Factura A
-        </span>
+          <div className="flex-1">
 
-      </label>
+            <div className="font-medium text-foreground">
+              Solicita Factura A
+            </div>
+
+            <div className="mt-1 text-sm text-muted-foreground">
+              Si está activado, se solicitarán los datos fiscales.
+            </div>
+
+          </div>
+
+          <input
+            type="checkbox"
+            checked={requested}
+            onChange={(e) =>
+              setRequested(e.target.checked)
+            }
+            className="h-5 w-5 cursor-pointer accent-primary"
+          />
+
+        </label>
+
+      </div>
 
       {requested && (
-        <>
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              CUIT
-            </label>
 
-            <input
-              value={cuit}
-              onChange={(e) =>
-                setCuit(e.target.value)
-              }
-              placeholder="30-12345678-9"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2"
-            />
+        <div className="mt-6 rounded-lg border border-border/50 bg-muted/10 p-6 transition-all">
+
+          <div className="grid gap-6 md:grid-cols-2">
+
+            <div>
+
+              <label className="mb-3 block text-sm font-medium text-foreground">
+                CUIT
+              </label>
+
+              <input
+                value={cuit}
+                onChange={(e) =>
+                  setCuit(e.target.value)
+                }
+                placeholder="30-12345678-9"
+                className="w-full rounded-lg border border-border/50 bg-background px-4 py-2 text-sm transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+              />
+
+            </div>
+
+            <div>
+
+              <label className="mb-3 block text-sm font-medium text-foreground">
+                Razón Social
+              </label>
+
+              <input
+                value={businessName}
+                onChange={(e) =>
+                  setBusinessName(
+                    e.target.value,
+                  )
+                }
+                className="w-full rounded-lg border border-border/50 bg-background px-4 py-2 text-sm transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+              />
+
+            </div>
+
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Razón Social
-            </label>
+          <div className="mt-6">
 
-            <input
-              value={businessName}
-              onChange={(e) =>
-                setBusinessName(e.target.value)
-              }
-              placeholder="Empresa S.A."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
+            <label className="mb-3 block text-sm font-medium text-foreground">
               Domicilio Fiscal
             </label>
 
@@ -194,22 +226,32 @@ export function InvoiceForm({
               rows={3}
               value={taxAddress}
               onChange={(e) =>
-                setTaxAddress(e.target.value)
+                setTaxAddress(
+                  e.target.value,
+                )
               }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              className="w-full rounded-lg border border-border/50 bg-background px-4 py-2 text-sm transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
             />
+
           </div>
 
-          <PrimaryButton
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving
-              ? "Guardando..."
-              : "Guardar Solicitud"}
-          </PrimaryButton>
-        </>
+          <div className="mt-6 flex justify-end">
+
+            <PrimaryButton
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving
+                ? "Guardando..."
+                : "Guardar cambios"}
+            </PrimaryButton>
+
+          </div>
+
+        </div>
+
       )}
+
     </div>
   );
 }

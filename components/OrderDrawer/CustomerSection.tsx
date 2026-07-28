@@ -33,7 +33,7 @@ export function CustomerSection({
     <SectionCard>
       <SectionTitle
         icon="👤"
-        title="Cliente"
+        title="Informacion de Cliente"
       />
 
       <div className="space-y-6">
@@ -69,19 +69,18 @@ export function CustomerSection({
             value={order.customer_phone}
           />
 
-        </div>
-
-        <div>
-
-          <p className="mb-2 text-xs text-muted-foreground">
-            Estado Magento
-          </p>
-
-          <StatusBadge
-            status={order.magento_status}
+          <Field
+            label="Estado"
+            value={
+              <StatusBadge
+                status={order.warehouse_status}
+              />
+            }
           />
 
         </div>
+
+        
 
       </div>
     </SectionCard>
