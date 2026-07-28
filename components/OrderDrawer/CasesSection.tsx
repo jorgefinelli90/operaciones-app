@@ -30,7 +30,13 @@ export function CasesSection({
     setLoading(true);
 
     try {
-      const data = await getCasesWithProduct(orderItemId.toString());
+      const data = await getCasesWithProduct(orderId);
+
+setCases(
+  data.filter(
+    (c) => c.order_item_id === orderItemId,
+  ),
+);
       setCases(data);
     } catch (error) {
       console.error(error);

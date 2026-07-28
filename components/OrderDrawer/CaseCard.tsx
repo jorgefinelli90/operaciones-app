@@ -102,7 +102,7 @@ export function CaseCard({
 
       <div className="mt-4 flex justify-between border-t pt-3 text-xs text-neutral-500">
 
-        <span>#{item.id}</span>
+        
 
         <span>
           {new Date(
