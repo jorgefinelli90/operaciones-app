@@ -36,15 +36,13 @@ export function NewCaseModal({
       setLoading(true);
 
       await createCase({
-        orderId,
-        orderItemId,
-
-        type,
-
-        title,
-
-        description,
-      });
+  orderId,
+  orderItemId,
+  type,
+  priority: "NORMAL",
+  title,
+  description,
+});
 
       setTitle("");
       setDescription("");
