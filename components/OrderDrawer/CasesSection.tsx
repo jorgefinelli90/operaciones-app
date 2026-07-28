@@ -6,8 +6,9 @@ import { CaseCard } from "./CaseCard";
 import { NewCaseModal } from "./NewCaseModal";
 
 import {
-  getCases,
+  getCasesWithProduct,
   type OrderCase,
+  type OrderCaseWithProduct,
 } from "@/lib/cases/repository";
 
 interface Props {
@@ -19,17 +20,17 @@ export function CasesSection({
   orderId,
   orderItemId,
 }: Props) {
-  const [cases, setCases] = useState<OrderCase[]>([]);
+  const [cases, setCases] = useState<OrderCaseWithProduct[]>([]);
+  const [selectedCase, setSelectedCase] = useState<OrderCaseWithProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
-  const [selectedCase, setSelectedCase] = useState<OrderCase | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   async function loadCases() {
     setLoading(true);
 
     try {
-      const data = await getCases(orderItemId);
+      const data = await getCasesWithProduct(orderItemId.toString());
       setCases(data);
     } catch (error) {
       console.error(error);

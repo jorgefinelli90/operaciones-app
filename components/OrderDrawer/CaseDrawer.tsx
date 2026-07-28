@@ -85,7 +85,7 @@ export function CaseDrawer({ open, onClose, item }: Props) {
             />
           </Accordion>
 
-          <Accordion title="Timeline">
+          <Accordion title="Linea de Tiempo:">
             <CaseTimeline key={refreshKey} caseId={item.id} />
           </Accordion>
 
@@ -98,10 +98,7 @@ export function CaseDrawer({ open, onClose, item }: Props) {
               />
             }
           >
-            <CaseComments
-              caseId={item.id}
-              onCommentAdded={() => setRefreshKey((v) => v + 1)}
-            />
+            <CaseComments caseId={item.id} />
           </Accordion>
         </div>
       </aside>

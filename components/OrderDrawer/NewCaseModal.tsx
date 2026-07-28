@@ -97,7 +97,7 @@ export function NewCaseModal({
           <div>
 
             <label className="mb-1 block text-sm font-medium">
-              Título
+              SKU de reemplazo:
             </label>
 
             <input

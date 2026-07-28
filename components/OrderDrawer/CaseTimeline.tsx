@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Clock3,
-  Circle,
-} from "lucide-react";
+import { Circle } from "lucide-react";
 
 import { EVENT_LABELS } from "@/lib/cases/eventLabels";
 import { STATUS_LABELS } from "@/lib/cases/statusLabels";
@@ -23,18 +20,18 @@ interface Props {
 export function CaseTimeline({
   caseId,
 }: Props) {
-  const [events, setEvents] = useState<OrderCaseEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] =
+    useState<OrderCaseEvent[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   async function load() {
     try {
-      setLoading(true);
-
-      const data = await getEvents(caseId);
+      const data =
+        await getEvents(caseId);
 
       setEvents(data);
-    } catch (e) {
-      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -46,7 +43,7 @@ export function CaseTimeline({
 
   if (loading) {
     return (
-      <div className="rounded-lg border p-5 text-sm text-neutral-500">
+      <div className="text-sm text-muted-foreground">
         Cargando historial...
       </div>
     );
@@ -54,73 +51,97 @@ export function CaseTimeline({
 
   if (!events.length) {
     return (
-      <div className="rounded-lg border border-dashed p-5 text-sm text-neutral-500">
-        Todavía no hay eventos registrados.
+      <div className="text-sm text-muted-foreground">
+        No hay historial.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {events.map((event, index) => {
-        const fromStatus = event.from_status as CaseStatus | null;
-        const toStatus = event.to_status as CaseStatus | null;
+    <div>
 
-        return (
-          <div
-            key={event.id}
-            className="flex gap-4"
-          >
-            <div className="flex flex-col items-center">
-              <Circle
-                size={12}
-                className="mt-1 fill-current"
-              />
+      <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Historial
+      </h3>
 
-              {index !== events.length - 1 && (
-                <div className="mt-2 h-full w-px bg-neutral-300" />
-              )}
-            </div>
+      <div className="space-y-0">
 
-            <div className="flex-1 rounded-lg border bg-[#262626] p-4">
+        {events.map((event, index) => {
 
-              <div className="flex items-center justify-between">
+          const fromStatus =
+            event.from_status as CaseStatus | null;
 
-                <div className="font-medium">
-                  {EVENT_LABELS[event.action]}
-                </div>
+          const toStatus =
+            event.to_status as CaseStatus | null;
 
-                <div className="flex items-center gap-1 text-xs text-neutral-500">
-                  <Clock3 size={14} />
+          return (
 
-                  {new Date(
-                    event.created_at,
-                  ).toLocaleString("es-AR")}
-                </div>
+            <div
+              key={event.id}
+              className="flex gap-4"
+            >
+
+              <div className="flex w-5 flex-col items-center">
+
+                <Circle
+                  size={10}
+                  className="mt-1 fill-current"
+                />
+
+                {index !== events.length - 1 && (
+                  <div className="mt-2 w-px flex-1 bg-border" />
+                )}
 
               </div>
 
-              {fromStatus && toStatus && (
-                <div className="mt-2 text-sm text-neutral-500">
+              <div className="flex-1 pb-6">
 
-                  <strong>
-                    Estado:
-                  </strong>{" "}
+                <div className="flex items-center justify-between">
 
-                  {STATUS_LABELS[fromStatus]}
+                  <div className="font-medium">
 
-                  {" → "}
+                    {EVENT_LABELS[event.action]}
 
-                  {STATUS_LABELS[toStatus]}
+                  </div>
+
+                  <div className="text-xs text-muted-foreground">
+
+                    {new Date(
+                      event.created_at,
+                    ).toLocaleString("es-AR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+
+                  </div>
 
                 </div>
-              )}
+
+                {fromStatus && toStatus && (
+
+                  <div className="mt-1 text-sm text-muted-foreground">
+
+                    {STATUS_LABELS[fromStatus]}
+
+                    {" → "}
+
+                    {STATUS_LABELS[toStatus]}
+
+                  </div>
+
+                )}
+
+              </div>
 
             </div>
 
-          </div>
-        );
-      })}
+          );
+        })}
+
+      </div>
+
     </div>
   );
 }

@@ -10,12 +10,15 @@ import { OrdersFilters } from "@/app/orders/OrdersFilters";
 import { OrdersTable } from "@/app/orders/OrdersTable";
 import { OrdersToolbar } from "@/app/orders/OrdersToolbar";
 import type { Order } from "@/types/orders";
+import { MissingProductsDrawer } from "@/components/MissingProducts/MissingProductsDrawer/MissingProductsDrawer";
 
 interface OrdersContentProps {
   loader: () => Promise<Order[]>;
   title: string;
   subtitle: string;
 }
+
+
 
 type SortKey =
   | "id"
@@ -259,15 +262,26 @@ export function OrdersContent({
           }}
         />
 
-        <OrderDrawer
-          order={selectedOrder}
-          open={drawerOpen}
-          onClose={() => {
-            setDrawerOpen(false);
-            setSelectedOrder(null);
-          }}
-          onWarehouseStatusUpdated={handleWarehouseStatusUpdated}
-        />
+        {title === "Productos faltantes" ? (
+  <MissingProductsDrawer
+    order={selectedOrder}
+    open={drawerOpen}
+    onClose={() => {
+      setDrawerOpen(false);
+      setSelectedOrder(null);
+    }}
+  />
+) : (
+  <OrderDrawer
+    order={selectedOrder}
+    open={drawerOpen}
+    onClose={() => {
+      setDrawerOpen(false);
+      setSelectedOrder(null);
+    }}
+    onWarehouseStatusUpdated={handleWarehouseStatusUpdated}
+  />
+)}
 
         <div className="mt-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">

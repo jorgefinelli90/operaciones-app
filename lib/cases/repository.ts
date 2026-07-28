@@ -39,6 +39,11 @@ export interface OrderCase {
   closed_at: string | null;
 }
 
+export interface OrderCaseWithProduct extends OrderCase {
+  original_sku: string;
+  product_name: string;
+}
+
 import type { CaseEventAction, CaseAction } from "./types";
 
 export interface OrderCaseEvent {
@@ -83,6 +88,43 @@ export async function getCases(orderItemId: number) {
   if (error) throw error;
 
   return data as OrderCase[];
+}
+
+export async function getCasesWithProduct(
+  orderId: string,
+) {
+  const { data, error } = await supabase
+    .from("order_cases")
+    .select(`
+      *,
+      order_items!inner(
+        id,
+        sku,
+        product_name,
+        qty,
+        price
+      )
+    `)
+    .eq("order_id", orderId)
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) throw error;
+
+  return (data ?? []).map((item: any) => ({
+    ...item,
+
+    order_item_id: item.order_items.id,
+
+    original_sku: item.order_items.sku,
+
+    product_name: item.order_items.product_name,
+
+    qty: item.order_items.qty,
+
+    price: item.order_items.price,
+  }));
 }
 
 export async function getCase(caseId: number) {
