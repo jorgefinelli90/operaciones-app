@@ -32,10 +32,15 @@ export function InvoiceForm({
 
   const [taxAddress, setTaxAddress] = useState("");
 
+  const [currentInvoice, setCurrentInvoice] =
+    useState<InvoiceRequest | null>(null);
+
   useEffect(() => {
     async function load() {
       try {
         const invoice = await getInvoiceRequest(orderId);
+
+        setCurrentInvoice(invoice);
 
         if (invoice) {
           setRequested(invoice.requested);
@@ -92,7 +97,13 @@ export function InvoiceForm({
         cuit,
         business_name: businessName,
         tax_address: taxAddress,
-        status: requested ? "pending" : "",
+        status: requested ? "PENDING" : "PENDING",
+        payment_status:
+          currentInvoice?.payment_status ?? null,
+        payment_amount:
+          currentInvoice?.payment_amount ?? null,
+        invoice_url:
+          currentInvoice?.invoice_url ?? null,
       };
 
       await saveInvoiceRequest(invoice);
