@@ -4,20 +4,22 @@ import type { InvoiceRequest } from "@/lib/invoices/types/invoice";
 export async function saveInvoiceRequest(
   invoice: InvoiceRequest,
 ) {
-  console.log("Invoice a guardar:", invoice);
+  const {
+    id,
+    created_at,
+    updated_at,
+    ...payload
+  } = invoice;
 
-  const result = await supabase
+  const { data, error } = await supabase
     .from("invoice_requests")
-    .upsert(invoice, {
+    .upsert(payload, {
       onConflict: "order_id",
     })
-    .select();
+    .select()
+    .single();
 
-  console.log("Resultado completo:", result);
+  if (error) throw error;
 
-  if (result.error) {
-    throw result.error;
-  }
-
-  return result.data;
+  return data;
 }

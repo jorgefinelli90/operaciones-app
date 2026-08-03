@@ -1,3 +1,17 @@
+export type InvoiceStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "GENERATED"
+  | "ERROR";
+
+export type PaymentStatus =
+  | "NO_PAYMENT"
+  | "PENDING_AMOUNT"
+  | "SEND_PAYMENT_LINK"
+  | "PAYMENT_LINK_SENT"
+  | "PAID"
+  | "ERROR";
+
 export interface InvoiceRequest {
   id?: number;
 
@@ -11,7 +25,13 @@ export interface InvoiceRequest {
 
   tax_address: string | null;
 
-  status: string;
+  status: InvoiceStatus;
+
+  payment_status: PaymentStatus | null;
+
+  payment_amount: number | null;
+
+  invoice_url: string | null;
 
   created_at?: string;
 
