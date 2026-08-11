@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   updateCasePriority,
@@ -10,9 +10,12 @@ import {
 
 import { ACTION_REGISTRY } from "@/lib/cases/actionRegistry";
 import { getAvailableActions } from "@/lib/cases/workflow";
+
 import { ActionModal } from "./actions/ActionModal";
+import { RequestStoreForm } from "./actions/RequestStoreForm";
 
 import type { CaseAction } from "@/lib/cases/types";
+
 import type {
   CasePriority,
   OrderCase,
@@ -20,30 +23,9 @@ import type {
 
 interface Props {
   item: OrderCase;
-  onExecuted: () => Promise<void> | void;
+  onExecuted: () =>
+    Promise<void> | void;
 }
-
-const PRIORITIES: {
-  value: CasePriority;
-  label: string;
-}[] = [
-  {
-    value: "LOW",
-    label: "Baja",
-  },
-  {
-    value: "NORMAL",
-    label: "Normal",
-  },
-  {
-    value: "HIGH",
-    label: "Alta",
-  },
-  {
-    value: "URGENT",
-    label: "Urgente",
-  },
-];
 
 const COLOR_CLASSES = {
   gray:
@@ -74,11 +56,99 @@ export function CaseActions({
   const [selectedAction, setSelectedAction] =
     useState<CaseAction | null>(null);
 
-  const [savingPriority, setSavingPriority] =
+  const [requestStoreOpen, setRequestStoreOpen] =
     useState(false);
 
-  const [savingAssignment, setSavingAssignment] =
+  const [savingRequestStore, setSavingRequestStore] =
     useState(false);
+
+  async function executeSimpleAction(
+    action: CaseAction,
+  ) {
+    try {
+      const { executeAction } =
+        await import(
+          "@/lib/cases/executor"
+        );
+
+      const result =
+        await executeAction({
+          caseId: item.id,
+          action,
+          payload: {},
+        });
+
+      if (!result.success) {
+        toast.error(
+          result.error ||
+            "No se pudo ejecutar la acción.",
+        );
+        return;
+      }
+
+      await onExecuted();
+
+      toast.success(
+        "Acción ejecutada correctamente.",
+      );
+    } catch (error) {
+      console.error(
+        "Error ejecutando acción:",
+        error,
+      );
+
+      toast.error(
+        "No se pudo ejecutar la acción.",
+      );
+    }
+  }
+
+  async function handleRequestStore(
+    payload: Record<string, unknown>,
+  ) {
+    try {
+      setSavingRequestStore(true);
+
+      const { executeAction } =
+        await import(
+          "@/lib/cases/executor"
+        );
+
+      const result =
+        await executeAction({
+          caseId: item.id,
+          action: "REQUEST_STORE",
+          payload,
+        });
+
+      if (!result.success) {
+        toast.error(
+          result.error ||
+            "No se pudo solicitar la búsqueda.",
+        );
+        return;
+      }
+
+      await onExecuted();
+
+      setRequestStoreOpen(false);
+
+      toast.success(
+        "Solicitud enviada correctamente.",
+      );
+    } catch (error) {
+      console.error(
+        "Error ejecutando REQUEST_STORE:",
+        error,
+      );
+
+      toast.error(
+        "No se pudo enviar la solicitud.",
+      );
+    } finally {
+      setSavingRequestStore(false);
+    }
+  }
 
   async function handlePriorityChange(
     value: CasePriority,
@@ -88,18 +158,22 @@ export function CaseActions({
     }
 
     try {
-      setSavingPriority(true);
-
       await updateCasePriority(
         item.id,
         value,
       );
 
       await onExecuted();
+
+      toast.success(
+        "Prioridad actualizada.",
+      );
     } catch (error) {
       console.error(error);
-    } finally {
-      setSavingPriority(false);
+
+      toast.error(
+        "No se pudo actualizar la prioridad.",
+      );
     }
   }
 
@@ -117,98 +191,175 @@ export function CaseActions({
     }
 
     try {
-      setSavingAssignment(true);
-
       await updateCaseAssignment(
         item.id,
         normalizedValue,
       );
 
       await onExecuted();
+
+      toast.success(
+        "Asignación actualizada.",
+      );
     } catch (error) {
       console.error(error);
-    } finally {
-      setSavingAssignment(false);
+
+      toast.error(
+        "No se pudo actualizar la asignación.",
+      );
     }
   }
 
   function handleAction(
     action: CaseAction,
   ) {
-    const config = ACTION_REGISTRY[action];
+    /*
+     * REQUEST_STORE tiene su propio
+     * formulario desplegable.
+     */
+    if (action === "REQUEST_STORE") {
+      setRequestStoreOpen(
+        (current) => !current,
+      );
+      return;
+    }
 
-    if (!config.confirm) {
+    const config =
+      ACTION_REGISTRY[action];
+
+    /*
+     * Las acciones que necesitan
+     * formulario se manejan con modal.
+     */
+    if (
+      action ===
+      "OFFER_ALTERNATIVE"
+    ) {
       setSelectedAction(action);
       return;
     }
 
-    if (
-      window.confirm(
+    /*
+     * Para acciones simples que antes
+     * utilizaban window.confirm(), usamos
+     * un toast de confirmación.
+     */
+    if (config.confirm) {
+      toast(
         config.confirmDescription ??
-          "¿Continuar?",
-      )
-    ) {
-      setSelectedAction(action);
+          "¿Deseás ejecutar esta acción?",
+        {
+          duration: 6000,
+          action: {
+            label: "Confirmar",
+            onClick: () => {
+              void executeSimpleAction(
+                action,
+              );
+            },
+          },
+        },
+      );
+
+      return;
     }
+
+    setSelectedAction(action);
   }
 
   return (
     <>
-      <div className="space-y-5">
-
-        {/* ACCIONES DEL WORKFLOW */}
+      <div className="space-y-3">
 
         {actions.length > 0 ? (
-          <div className="grid gap-3">
+          <div className="space-y-3">
 
             {actions.map((action) => {
               const config =
                 ACTION_REGISTRY[action];
 
-              const Icon = config.icon;
+              const Icon =
+                config.icon;
+
+              const isRequestStore =
+                action ===
+                "REQUEST_STORE";
 
               return (
-                <button
+                <div
                   key={action}
-                  type="button"
-                  onClick={() =>
-                    handleAction(action)
-                  }
-                  className={`
-                    group
-                    rounded-xl
-                    border
-                    p-4
-                    text-left
-                    transition-all
-                    duration-200
-                    ${COLOR_CLASSES[config.color]}
-                  `}
+                  className="space-y-2"
                 >
-                  <div className="flex items-start gap-4">
 
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/20 ring-1 ring-white/10">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAction(
+                        action,
+                      )
+                    }
+                    className={`
+                      group
+                      w-full
+                      rounded-xl
+                      border
+                      p-4
+                      text-left
+                      transition-all
+                      duration-200
+                      ${COLOR_CLASSES[config.color]}
+                    `}
+                  >
 
-                      <Icon size={18} />
+                    <div className="flex items-start gap-4">
 
-                    </div>
-
-                    <div className="flex-1">
-
-                      <div className="font-medium text-white">
-                        {config.label}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-black/20 ring-1 ring-white/10">
+                        <Icon size={18} />
                       </div>
 
-                      {config.description && (
-                        <p className="mt-1 text-sm text-neutral-400">
-                          {config.description}
-                        </p>
+                      <div className="min-w-0 flex-1">
+
+                        <div className="font-medium text-white">
+                          {config.label}
+                        </div>
+
+                        {config.description && (
+                          <p className="mt-1 text-sm text-neutral-400">
+                            {config.description}
+                          </p>
+                        )}
+
+                      </div>
+
+                      {isRequestStore && (
+                        <span className="text-lg text-neutral-400">
+                          {requestStoreOpen
+                            ? "−"
+                            : "+"}
+                        </span>
                       )}
 
                     </div>
 
-                  </div>
-                </button>
+                  </button>
+
+                  {isRequestStore &&
+                    requestStoreOpen && (
+                      <div className="rounded-xl border border-border bg-background p-4">
+
+                        <RequestStoreForm
+                          loading={
+                            savingRequestStore
+                          }
+                          onSubmit={
+                            handleRequestStore
+                          }
+                        />
+
+                      </div>
+                    )}
+
+                </div>
               );
             })}
 
@@ -219,110 +370,22 @@ export function CaseActions({
           </div>
         )}
 
-        {/* PRIORIDAD */}
-
-        <div className="rounded-xl border p-4">
-
-          <label
-            htmlFor={`priority-${item.id}`}
-            className="mb-2 block text-sm font-medium"
-          >
-            Prioridad
-          </label>
-
-          <div className="relative">
-
-            <select
-              id={`priority-${item.id}`}
-              value={
-                (item.priority as CasePriority) ||
-                "NORMAL"
-              }
-              disabled={savingPriority}
-              onChange={(event) =>
-                handlePriorityChange(
-                  event.target.value as CasePriority,
-                )
-              }
-              className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
-            >
-              {PRIORITIES.map((priority) => (
-                <option
-                  key={priority.value}
-                  value={priority.value}
-                >
-                  {priority.label}
-                </option>
-              ))}
-            </select>
-
-            {savingPriority && (
-              <Loader2
-                size={16}
-                className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground"
-              />
-            )}
-
-          </div>
-
-        </div>
-
-        {/* ASIGNACIÓN */}
-
-        <div className="rounded-xl border p-4">
-
-          <label
-            htmlFor={`assigned-${item.id}`}
-            className="mb-2 block text-sm font-medium"
-          >
-            Asignado a
-          </label>
-
-          <div className="relative">
-
-            <input
-              id={`assigned-${item.id}`}
-              type="text"
-              defaultValue={
-                item.assigned_to ?? ""
-              }
-              disabled={savingAssignment}
-              placeholder="Usuario o responsable"
-              onBlur={(event) =>
-                handleAssignmentChange(
-                  event.target.value,
-                )
-              }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm outline-none transition focus:border-primary"
-            />
-
-            {savingAssignment && (
-              <Loader2
-                size={16}
-                className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground"
-              />
-            )}
-
-          </div>
-
-          <p className="mt-2 text-xs text-muted-foreground">
-            Se guarda al salir del campo.
-          </p>
-
-        </div>
-
-        
-
       </div>
 
       {selectedAction && (
         <ActionModal
           open
-          action={selectedAction}
+          action={
+            selectedAction
+          }
           caseId={item.id}
-          onExecuted={onExecuted}
+          onExecuted={
+            onExecuted
+          }
           onClose={() =>
-            setSelectedAction(null)
+            setSelectedAction(
+              null,
+            )
           }
         />
       )}
