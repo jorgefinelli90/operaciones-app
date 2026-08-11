@@ -1,7 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Pencil,
+  X,
+} from "lucide-react";
+
+import {
+  updateCaseAssignment,
+  updateCasePriority,
+} from "@/lib/cases/repository";
+
+import type {
+  CasePriority,
+} from "@/lib/cases/repository";
 
 import type {
   OrderCaseWithProduct,
@@ -42,11 +58,65 @@ const TYPE_LABELS = {
   CLAIM: "Reclamo",
 } as const;
 
+const PRIORITIES: {
+  value: CasePriority;
+  label: string;
+}[] = [
+  {
+    value: "LOW",
+    label: "Baja",
+  },
+  {
+    value: "NORMAL",
+    label: "Normal",
+  },
+  {
+    value: "HIGH",
+    label: "Alta",
+  },
+  {
+    value: "URGENT",
+    label: "Urgente",
+  },
+];
+
+const PRIORITY_COLORS = {
+  LOW: "text-neutral-500",
+  NORMAL: "text-neutral-400",
+  HIGH: "text-orange-500",
+  URGENT: "text-red-500",
+} as const;
+
 export function CaseCard({
   item,
   onOpen,
 }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] =
+    useState(false);
+
+  const [priority, setPriority] =
+    useState<CasePriority>(
+      (item.priority as CasePriority) ||
+        "NORMAL",
+    );
+
+  const [assignedTo, setAssignedTo] =
+    useState(item.assigned_to ?? "");
+
+  const [editingPriority, setEditingPriority] =
+    useState(false);
+
+  const [editingAssignment, setEditingAssignment] =
+    useState(false);
+
+  const [savingPriority, setSavingPriority] =
+    useState(false);
+
+  const [savingAssignment, setSavingAssignment] =
+    useState(false);
+
+  const [assignmentValue, setAssignmentValue] =
+    useState(item.assigned_to ?? "");
 
   const statusLabel =
     STATUS_LABELS[item.status] ??
@@ -56,18 +126,84 @@ export function CaseCard({
     TYPE_LABELS[item.type] ??
     item.type.replaceAll("_", " ");
 
-  function handleToggle() {
-    setExpanded((value) => !value);
+  const priorityLabel =
+    PRIORITIES.find(
+      (value) => value.value === priority,
+    )?.label ?? "Normal";
+
+  const priorityColor =
+    PRIORITY_COLORS[priority];
+
+  async function handlePriorityChange(
+    value: CasePriority,
+  ) {
+    if (value === priority) {
+      setEditingPriority(false);
+      return;
+    }
+
+    try {
+      setSavingPriority(true);
+
+      await updateCasePriority(
+        item.id,
+        value,
+      );
+
+      setPriority(value);
+      setEditingPriority(false);
+    } catch (error) {
+      console.error(
+        "Error actualizando prioridad:",
+        error,
+      );
+    } finally {
+      setSavingPriority(false);
+    }
   }
 
-  function handleOpenDetail() {
-    onOpen?.(item);
+  async function saveAssignment() {
+    const value =
+      assignmentValue.trim();
+
+    if (value === assignedTo) {
+      setEditingAssignment(false);
+      return;
+    }
+
+    try {
+      setSavingAssignment(true);
+
+      await updateCaseAssignment(
+        item.id,
+        value || null,
+      );
+
+      setAssignedTo(value);
+      setAssignmentValue(value);
+      setEditingAssignment(false);
+    } catch (error) {
+      console.error(
+        "Error actualizando asignación:",
+        error,
+      );
+    } finally {
+      setSavingAssignment(false);
+    }
+  }
+
+  function cancelAssignment() {
+    setAssignmentValue(
+      assignedTo,
+    );
+
+    setEditingAssignment(false);
   }
 
   return (
     <div className="rounded-xl border bg-card transition-colors hover:border-primary/40">
 
-      {/* HEADER / RESUMEN */}
+      {/* HEADER */}
 
       <div className="p-5">
 
@@ -95,11 +231,209 @@ export function CaseCard({
 
         </div>
 
+        {/* INFORMACIÓN OPERATIVA */}
+
+        <div className="mt-4 grid grid-cols-3 gap-3">
+
+          {/* SKU */}
+
+          <div className="rounded-lg bg-muted/50 px-3 py-2">
+
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              SKU
+            </div>
+
+            <div className="mt-1 truncate font-mono text-xs font-medium">
+              {item.original_sku}
+            </div>
+
+          </div>
+
+          {/* PRIORIDAD */}
+
+          <div className="rounded-lg bg-muted/50 px-3 py-2">
+
+            <div className="flex items-center justify-between">
+
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Prioridad
+              </div>
+
+              {!editingPriority && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingPriority(true)
+                  }
+                  className="text-muted-foreground transition hover:text-foreground"
+                  title="Cambiar prioridad"
+                >
+                  <Pencil size={12} />
+                </button>
+              )}
+
+            </div>
+
+            {editingPriority ? (
+              <div className="mt-1 flex items-center gap-1">
+
+                <select
+                  autoFocus
+                  value={priority}
+                  disabled={savingPriority}
+                  onChange={(event) =>
+                    handlePriorityChange(
+                      event.target.value as CasePriority,
+                    )
+                  }
+                  className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs outline-none"
+                >
+                  {PRIORITIES.map(
+                    (option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                {savingPriority && (
+                  <Loader2
+                    size={13}
+                    className="shrink-0 animate-spin"
+                  />
+                )}
+
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingPriority(true)
+                }
+                className={`mt-1 text-left text-xs font-medium ${priorityColor}`}
+              >
+                {priorityLabel}
+              </button>
+            )}
+
+          </div>
+
+          {/* ASIGNACIÓN */}
+
+          <div className="rounded-lg bg-muted/50 px-3 py-2">
+
+            <div className="flex items-center justify-between">
+
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Asignado
+              </div>
+
+              {!editingAssignment && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingAssignment(true)
+                  }
+                  className="text-muted-foreground transition hover:text-foreground"
+                  title="Cambiar asignación"
+                >
+                  <Pencil size={12} />
+                </button>
+              )}
+
+            </div>
+
+            {editingAssignment ? (
+              <div className="mt-1 flex items-center gap-1">
+
+                <input
+                  autoFocus
+                  value={assignmentValue}
+                  disabled={savingAssignment}
+                  onChange={(event) =>
+                    setAssignmentValue(
+                      event.target.value,
+                    )
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Enter"
+                    ) {
+                      event.preventDefault();
+                      saveAssignment();
+                    }
+
+                    if (
+                      event.key === "Escape"
+                    ) {
+                      event.preventDefault();
+                      cancelAssignment();
+                    }
+                  }}
+                  placeholder="Asignar..."
+                  className="min-w-0 w-full rounded border border-border bg-background px-1.5 py-1 text-xs outline-none"
+                />
+
+                {savingAssignment ? (
+                  <Loader2
+                    size={13}
+                    className="shrink-0 animate-spin"
+                  />
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={saveAssignment}
+                      className="text-emerald-500 hover:text-emerald-400"
+                      title="Guardar"
+                    >
+                      <Check size={14} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={cancelAssignment}
+                      className="text-red-500 hover:text-red-400"
+                      title="Cancelar"
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                )}
+
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingAssignment(true)
+                }
+                className="mt-1 block max-w-full truncate text-left text-xs font-medium"
+              >
+                {assignedTo ||
+                  "Sin asignar"}
+              </button>
+            )}
+
+          </div>
+
+        </div>
+
+        {/* TOGGLE */}
+
         <div className="mt-4 flex justify-end">
 
           <button
             type="button"
-            onClick={handleToggle}
+            onClick={() =>
+              setExpanded(
+                (value) => !value,
+              )
+            }
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary transition hover:opacity-80"
           >
             {expanded ? (
@@ -133,7 +467,7 @@ export function CaseCard({
 
           <div className="border-t px-5 pb-5 pt-5">
 
-            {/* SKU */}
+            {/* SKU ORIGINAL / REEMPLAZO */}
 
             <div className="rounded-lg border bg-background p-4">
 
@@ -147,7 +481,7 @@ export function CaseCard({
 
               {item.title && (
                 <>
-                  <div className="my-3 flex items-center justify-center text-neutral-400">
+                  <div className="my-3 flex justify-center text-neutral-400">
                     ↓
                   </div>
 
@@ -187,12 +521,16 @@ export function CaseCard({
                 Creado el{" "}
                 {new Date(
                   item.created_at,
-                ).toLocaleDateString("es-AR")}
+                ).toLocaleDateString(
+                  "es-AR",
+                )}
               </span>
 
               <button
                 type="button"
-                onClick={handleOpenDetail}
+                onClick={() =>
+                  onOpen?.(item)
+                }
                 className="rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted"
               >
                 Ver detalle

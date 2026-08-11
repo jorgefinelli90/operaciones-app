@@ -222,6 +222,69 @@ export async function updateCaseStatus(
   return data as OrderCase;
 }
 
+export async function updateCasePriority(
+  caseId: number,
+  priority: CasePriority,
+  createdBy?: string,
+) {
+  const currentCase = await getCase(caseId);
+
+  const { data, error } = await supabase
+    .from("order_cases")
+    .update({
+      priority,
+    })
+    .eq("id", caseId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  await createEvent({
+    caseId,
+    action: "PRIORITY_CHANGED" as CaseAction,
+    payload: {
+      from: currentCase.priority,
+      to: priority,
+    },
+    createdBy,
+  });
+
+  return data as OrderCase;
+}
+
+export async function updateCaseAssignment(
+  caseId: number,
+  assignedTo: string | null,
+  createdBy?: string,
+) {
+  const currentCase = await getCase(caseId);
+
+  const { data, error } = await supabase
+    .from("order_cases")
+    .update({
+      assigned_to: assignedTo,
+    })
+    .eq("id", caseId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  await createEvent({
+    caseId,
+    action: "ASSIGNMENT_CHANGED" as CaseAction,
+    payload: {
+      from: currentCase.assigned_to,
+      to: assignedTo,
+    },
+    createdBy,
+  });
+
+  return data as OrderCase;
+}
+
+
 export async function createEvent(input: {
   caseId: number;
 

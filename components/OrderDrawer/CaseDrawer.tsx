@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import { Accordion } from "@/components/ui/Accordion";
 
 import { CaseActions } from "./CaseActions";
@@ -25,21 +23,36 @@ const STATUS_COLORS = {
   CANCELLED: "bg-red-100 text-red-800",
 } as const;
 
-export function CaseDrawer({ open, onClose, item }: Props) {
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  if (!open || !item) return null;
+export function CaseDrawer({
+  open,
+  onClose,
+  item,
+}: Props) {
+  if (!open || !item) {
+    return null;
+  }
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
+      <div
+        className="fixed inset-0 z-40 bg-black/40"
+        onClick={onClose}
+      />
 
       <aside className="fixed right-0 top-0 z-50 flex h-screen w-[650px] flex-col border-l border-border bg-background shadow-xl">
-        <header className="flex items-center justify-between border-b border-border p-5">
-          <div>
-            <h2 className="text-lg font-semibold">Caso #{item.id}</h2>
 
-            <p className="text-sm text-neutral-500">{item.type}</p>
+        {/* HEADER */}
+
+        <header className="flex items-center justify-between border-b border-border p-5">
+
+          <div>
+            <h2 className="text-lg font-semibold">
+              Caso #{item.id}
+            </h2>
+
+            <p className="text-sm text-neutral-500">
+              {item.type.replaceAll("_", " ")}
+            </p>
           </div>
 
           <button
@@ -49,12 +62,21 @@ export function CaseDrawer({ open, onClose, item }: Props) {
           >
             ×
           </button>
+
         </header>
 
+        {/* CONTENT */}
+
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
+
+          {/* RESUMEN */}
+
           <section className="rounded-xl border border-border p-5">
+
             <div className="flex items-center justify-between">
+
               <div>
+
                 <h2 className="text-xl font-semibold">
                   {item.title || "Caso"}
                 </h2>
@@ -62,6 +84,7 @@ export function CaseDrawer({ open, onClose, item }: Props) {
                 <p className="mt-1 text-sm text-neutral-500">
                   {item.type.replaceAll("_", " ")}
                 </p>
+
               </div>
 
               <span
@@ -69,6 +92,7 @@ export function CaseDrawer({ open, onClose, item }: Props) {
               >
                 {item.status.replaceAll("_", " ")}
               </span>
+
             </div>
 
             {item.description && (
@@ -76,18 +100,35 @@ export function CaseDrawer({ open, onClose, item }: Props) {
                 {item.description}
               </p>
             )}
+
           </section>
 
-          <Accordion title="Acciones disponibles" defaultOpen>
+          {/* ACCIONES */}
+
+          <Accordion
+            title="Acciones disponibles"
+            defaultOpen
+          >
             <CaseActions
               item={item}
-              onExecuted={() => window.location.reload()}
+              onExecuted={() => {
+                // No recargar la página.
+                // El drawer permanece abierto.
+              }}
             />
           </Accordion>
 
-          <Accordion title="Linea de Tiempo:">
-            <CaseTimeline key={refreshKey} caseId={item.id} />
+          {/* HISTORIAL */}
+
+          <Accordion title="Línea de tiempo">
+
+            <CaseTimeline
+              caseId={item.id}
+            />
+
           </Accordion>
+
+          {/* COMENTARIOS */}
 
           <Accordion
             title="Comentarios"
@@ -98,9 +139,13 @@ export function CaseDrawer({ open, onClose, item }: Props) {
               />
             }
           >
-            <CaseComments caseId={item.id} />
+            <CaseComments
+              caseId={item.id}
+            />
           </Accordion>
+
         </div>
+
       </aside>
     </>
   );

@@ -1,20 +1,106 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Circle } from "lucide-react";
-
-import { EVENT_LABELS } from "@/lib/cases/eventLabels";
-import { STATUS_LABELS } from "@/lib/cases/statusLabels";
-
-import type { CaseStatus } from "@/lib/cases/types";
+import {
+  CheckCircle2,
+  Circle,
+  Clock3,
+  PackageCheck,
+  RefreshCcw,
+  UserRound,
+} from "lucide-react";
 
 import {
   getEvents,
   type OrderCaseEvent,
 } from "@/lib/cases/repository";
 
+import { EVENT_LABELS } from "@/lib/cases/eventLabels";
+import { STATUS_LABELS } from "@/lib/cases/statusLabels";
+
+import type {
+  CaseAction,
+  CaseEventAction,
+  CaseStatus,
+} from "@/lib/cases/types";
+
 interface Props {
   caseId: number;
+}
+
+function getEventIcon(
+  action: CaseAction | CaseEventAction,
+) {
+  const actionName = String(action);
+
+  switch (actionName) {
+    case "CASE_CREATED":
+      return Circle;
+
+    case "STATUS_CHANGED":
+      return RefreshCcw;
+
+    case "PRODUCT_RESERVED":
+    case "PRODUCT_SHIPPED":
+      return PackageCheck;
+
+    case "COMMENT_ADDED":
+      return UserRound;
+
+    case "CASE_RESOLVED":
+      return CheckCircle2;
+
+    default:
+      return Circle;
+  }
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(
+    "es-AR",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    },
+  ).format(new Date(value));
+}
+
+function getEventLabel(
+  action: CaseAction | CaseEventAction,
+) {
+  const labels: Record<string, string> = {
+    CASE_CREATED: "Caso creado",
+    STATUS_CHANGED: "Estado cambiado",
+    PRIORITY_CHANGED: "Prioridad cambiada",
+    ASSIGNMENT_CHANGED: "Asignación cambiada",
+    COMMENT_ADDED: "Comentario agregado",
+    PRODUCT_RESERVED: "Producto reservado",
+    PRODUCT_SHIPPED: "Producto despachado",
+    CASE_RESOLVED: "Caso resuelto",
+  };
+
+  return (
+    labels[action] ??
+    EVENT_LABELS[action] ??
+    action
+      .replaceAll("_", " ")
+      .toLowerCase()
+      .replace(/^./, (char) =>
+        char.toUpperCase(),
+      )
+  );
+}
+
+function getStatusLabel(
+  status: string | null,
+) {
+  if (!status) return null;
+
+  return (
+    STATUS_LABELS[
+      status as CaseStatus
+    ] ?? status.replaceAll("_", " ")
+  );
 }
 
 export function CaseTimeline({
@@ -26,24 +112,38 @@ export function CaseTimeline({
   const [loading, setLoading] =
     useState(true);
 
-  async function load() {
+  async function loadEvents() {
     try {
+      setLoading(true);
+
       const data =
         await getEvents(caseId);
 
       setEvents(data);
+    } catch (error) {
+      console.error(
+        "Error cargando historial:",
+        error,
+      );
+
+      setEvents([]);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    loadEvents();
   }, [caseId]);
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+        <Clock3
+          size={15}
+          className="animate-pulse"
+        />
+
         Cargando historial...
       </div>
     );
@@ -51,97 +151,249 @@ export function CaseTimeline({
 
   if (!events.length) {
     return (
-      <div className="text-sm text-muted-foreground">
-        No hay historial.
+      <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        Todavía no hay movimientos registrados.
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="relative">
 
-      <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        Historial
-      </h3>
-
-      <div className="space-y-0">
-
-        {events.map((event, index) => {
+      {events.map(
+        (event, index) => {
+          const Icon =
+            getEventIcon(event.action);
 
           const fromStatus =
-            event.from_status as CaseStatus | null;
+            getStatusLabel(
+              event.from_status,
+            );
 
           const toStatus =
-            event.to_status as CaseStatus | null;
+            getStatusLabel(
+              event.to_status,
+            );
+
+          const isLast =
+            index ===
+            events.length - 1;
 
           return (
-
             <div
               key={event.id}
-              className="flex gap-4"
+              className="relative flex gap-3"
             >
 
-              <div className="flex w-5 flex-col items-center">
+              {/* LÍNEA */}
 
-                <Circle
-                  size={10}
-                  className="mt-1 fill-current"
-                />
+              {!isLast && (
+                <div className="absolute left-[13px] top-7 bottom-0 w-px bg-border" />
+              )}
 
-                {index !== events.length - 1 && (
-                  <div className="mt-2 w-px flex-1 bg-border" />
-                )}
+              {/* ICONO */}
+
+              <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground">
+
+                <Icon size={13} />
 
               </div>
 
-              <div className="flex-1 pb-6">
+              {/* EVENTO */}
 
-                <div className="flex items-center justify-between">
+              <div
+                className={`min-w-0 flex-1 ${
+                  isLast
+                    ? "pb-0"
+                    : "pb-5"
+                }`}
+              >
 
-                  <div className="font-medium">
+                <div className="rounded-lg border bg-card px-3 py-3">
 
-                    {EVENT_LABELS[event.action]}
+                  <div className="flex items-start justify-between gap-3">
+
+                    <div className="min-w-0">
+
+                      <div className="text-sm font-medium">
+                        {getEventLabel(
+                          event.action,
+                        )}
+                      </div>
+
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
+
+                      <Clock3 size={12} />
+
+                      {formatDate(
+                        event.created_at,
+                      )}
+
+                    </div>
 
                   </div>
 
-                  <div className="text-xs text-muted-foreground">
+                  {/* CAMBIO DE ESTADO */}
 
-                    {new Date(
-                      event.created_at,
-                    ).toLocaleString("es-AR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  {fromStatus &&
+                    toStatus && (
+                      <div className="mt-2 flex items-center gap-2 text-xs">
 
-                  </div>
+                        <span className="rounded-md bg-muted px-2 py-1">
+                          {fromStatus}
+                        </span>
+
+                        <span className="text-muted-foreground">
+                          →
+                        </span>
+
+                        <span className="rounded-md bg-muted px-2 py-1">
+                          {toStatus}
+                        </span>
+
+                      </div>
+                    )}
+
+                  {/* PAYLOAD */}
+
+                  {event.payload &&
+                    Object.keys(
+                      event.payload,
+                    ).length >
+                      0 && (
+                      <EventPayload
+                        payload={
+                          event.payload
+                        }
+                      />
+                    )}
 
                 </div>
-
-                {fromStatus && toStatus && (
-
-                  <div className="mt-1 text-sm text-muted-foreground">
-
-                    {STATUS_LABELS[fromStatus]}
-
-                    {" → "}
-
-                    {STATUS_LABELS[toStatus]}
-
-                  </div>
-
-                )}
 
               </div>
 
             </div>
-
           );
-        })}
-
-      </div>
+        },
+      )}
 
     </div>
   );
+}
+
+function EventPayload({
+  payload,
+}: {
+  payload: Record<
+    string,
+    unknown
+  >;
+}) {
+  const entries =
+    Object.entries(
+      payload,
+    ).filter(
+      ([key, value]) =>
+        value !== null &&
+        value !== undefined &&
+        key !== "comment",
+      );
+
+  if (!entries.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-2 space-y-1">
+
+      {entries.map(
+        ([key, value]) => (
+          <div
+            key={key}
+            className="text-xs text-muted-foreground"
+          >
+            <span className="font-medium text-foreground">
+              {formatPayloadKey(
+                key,
+              )}
+              :
+            </span>{" "}
+            {formatPayloadValue(
+              value,
+            )}
+          </div>
+        ),
+      )}
+
+    </div>
+  );
+}
+
+function formatPayloadKey(
+  key: string,
+) {
+  const labels: Record<string, string> = {
+    from: "Anterior",
+    to: "Nuevo",
+    priority: "Prioridad",
+    assigned_to: "Asignado a",
+    from_priority: "Prioridad anterior",
+    to_priority: "Nueva prioridad",
+    from_assignment: "Asignación anterior",
+    to_assignment: "Nueva asignación",
+  };
+
+  return (
+    labels[key] ??
+    key
+      .replaceAll("_", " ")
+      .replace(/^./, (char) =>
+        char.toUpperCase(),
+      )
+  );
+}
+
+function formatPayloadValue(
+  value: unknown,
+) {
+  const labels: Record<string, string> = {
+    LOW: "Baja",
+    NORMAL: "Normal",
+    HIGH: "Alta",
+    URGENT: "Urgente",
+
+    OPEN: "Abierto",
+    WAITING_STORE: "Esperando tienda",
+    WAITING_CUSTOMER:
+      "Esperando cliente",
+    IN_PROGRESS: "En proceso",
+    RESOLVED: "Resuelto",
+    CANCELLED: "Cancelado",
+  };
+
+  if (
+    typeof value === "string" &&
+    labels[value]
+  ) {
+    return labels[value];
+  }
+
+  if (
+    typeof value === "boolean"
+  ) {
+    return value
+      ? "Sí"
+      : "No";
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null
+  ) {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
 }
