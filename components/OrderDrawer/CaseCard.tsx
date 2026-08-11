@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type {
   OrderCaseWithProduct,
@@ -23,6 +24,15 @@ const STATUS_COLORS = {
   CANCELLED: "bg-red-100 text-red-800",
 } as const;
 
+const STATUS_LABELS = {
+  OPEN: "Abierto",
+  WAITING_STORE: "Esperando tienda",
+  WAITING_CUSTOMER: "Esperando cliente",
+  IN_PROGRESS: "En proceso",
+  RESOLVED: "Resuelto",
+  CANCELLED: "Cancelado",
+} as const;
+
 const TYPE_LABELS = {
   NO_STOCK: "Sin stock",
   CHANGE: "Cambio",
@@ -38,98 +48,161 @@ export function CaseCard({
 }: Props) {
   const [expanded, setExpanded] = useState(false);
 
+  const statusLabel =
+    STATUS_LABELS[item.status] ??
+    item.status.replaceAll("_", " ");
+
+  const typeLabel =
+    TYPE_LABELS[item.type] ??
+    item.type.replaceAll("_", " ");
+
+  function handleToggle() {
+    setExpanded((value) => !value);
+  }
+
+  function handleOpenDetail() {
+    onOpen?.(item);
+  }
+
   return (
-    <div className="rounded-xl border bg-card p-5 transition hover:border-primary/40">
+    <div className="rounded-xl border bg-card transition-colors hover:border-primary/40">
 
-      <div className="flex items-start justify-between">
+      {/* HEADER / RESUMEN */}
 
-        <div className="flex-1">
+      <div className="p-5">
 
-          <div className="font-semibold text-base">
-            {item.product_name}
+        <div className="flex items-start justify-between gap-4">
+
+          <div className="min-w-0 flex-1">
+
+            <div className="font-semibold text-base">
+              {item.product_name}
+            </div>
+
+            <div className="mt-1 text-xs uppercase text-neutral-500">
+              {typeLabel}
+            </div>
+
           </div>
 
-          <div className="mt-1 text-xs uppercase text-neutral-500">
-            {TYPE_LABELS[item.type]}
-          </div>
-
-        </div>
-
-        <span
-          className={`ml-4 rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[item.status]}`}
-        >
-          {item.status.replaceAll("_", " ")}
-        </span>
-
-      </div>
-
-      <div
-        className={`overflow-hidden transition-all duration-300 ${
-          expanded ? "max-h-[500px] mt-5" : "max-h-0"
-        }`}
-      >
-        <div className="rounded-lg border bg-background p-3">
-
-          <div className="text-xs text-neutral-500">
-            SKU ORIGINAL
-          </div>
-
-          <div className="font-mono font-semibold">
-            {item.original_sku}
-          </div>
-
-          {item.title && (
-            <>
-              <div className="my-3 text-center text-neutral-400">
-                ↓
-              </div>
-
-              <div className="text-xs text-neutral-500">
-                SKU REEMPLAZO
-              </div>
-
-              <div className="font-mono font-semibold text-emerald-600">
-                {item.title}
-              </div>
-            </>
-          )}
-
-        </div>
-
-        {item.description && (
-          <div className="mt-4 rounded-lg bg-muted p-3 text-sm">
-            {item.description}
-          </div>
-        )}
-
-        <div className="mt-4 flex items-center justify-between border-t pt-4">
-
-          <span className="text-xs text-neutral-500">
-            {new Date(item.created_at).toLocaleDateString("es-AR")}
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+              STATUS_COLORS[item.status]
+            }`}
+          >
+            {statusLabel}
           </span>
+
+        </div>
+
+        <div className="mt-4 flex justify-end">
 
           <button
             type="button"
-            onClick={() => onOpen?.(item)}
-            className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted"
+            onClick={handleToggle}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary transition hover:opacity-80"
           >
-            Ver detalle
+            {expanded ? (
+              <>
+                Menos información
+                <ChevronUp size={16} />
+              </>
+            ) : (
+              <>
+                Más información
+                <ChevronDown size={16} />
+              </>
+            )}
           </button>
 
         </div>
+
       </div>
 
-      <div className="mt-4 flex justify-end">
+      {/* INFORMACIÓN EXPANDIDA */}
 
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          {expanded
-            ? "− Menos información"
-            : "+ Más información"}
-        </button>
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${
+          expanded
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+
+        <div className="overflow-hidden">
+
+          <div className="border-t px-5 pb-5 pt-5">
+
+            {/* SKU */}
+
+            <div className="rounded-lg border bg-background p-4">
+
+              <div className="text-xs font-medium text-neutral-500">
+                SKU ORIGINAL
+              </div>
+
+              <div className="mt-1 font-mono font-semibold">
+                {item.original_sku}
+              </div>
+
+              {item.title && (
+                <>
+                  <div className="my-3 flex items-center justify-center text-neutral-400">
+                    ↓
+                  </div>
+
+                  <div className="text-xs font-medium text-neutral-500">
+                    SKU REEMPLAZO
+                  </div>
+
+                  <div className="mt-1 font-mono font-semibold text-emerald-600">
+                    {item.title}
+                  </div>
+                </>
+              )}
+
+            </div>
+
+            {/* DESCRIPCIÓN */}
+
+            {item.description && (
+              <div className="mt-4">
+
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  Descripción
+                </div>
+
+                <div className="rounded-lg bg-muted p-3 text-sm whitespace-pre-wrap">
+                  {item.description}
+                </div>
+
+              </div>
+            )}
+
+            {/* FOOTER */}
+
+            <div className="mt-5 flex items-center justify-between border-t pt-4">
+
+              <span className="text-xs text-neutral-500">
+                Creado el{" "}
+                {new Date(
+                  item.created_at,
+                ).toLocaleDateString("es-AR")}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleOpenDetail}
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted"
+              >
+                Ver detalle
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
 
       </div>
 
