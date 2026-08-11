@@ -1,4 +1,8 @@
-import type { CaseAction, CaseStatus, CaseType } from "./types";
+import type {
+  CaseAction,
+  CaseStatus,
+  CaseType,
+} from "./types";
 
 type Registry = Record<
   CaseType,
@@ -31,7 +35,9 @@ export const registry: Registry = {
       "CLOSE_CASE",
     ],
 
-    RESOLVED: [],
+    RESOLVED: [
+      "REOPEN_CASE",
+    ],
 
     CANCELLED: [],
   },
@@ -54,7 +60,9 @@ export const registry: Registry = {
       "CLOSE_CASE",
     ],
 
-    RESOLVED: [],
+    RESOLVED: [
+      "REOPEN_CASE",
+    ],
 
     CANCELLED: [],
   },
@@ -64,7 +72,9 @@ export const registry: Registry = {
     WAITING_STORE: [],
     WAITING_CUSTOMER: [],
     IN_PROGRESS: [],
-    RESOLVED: [],
+    RESOLVED: [
+      "REOPEN_CASE",
+    ],
     CANCELLED: [],
   },
 
@@ -73,7 +83,9 @@ export const registry: Registry = {
     WAITING_STORE: [],
     WAITING_CUSTOMER: [],
     IN_PROGRESS: [],
-    RESOLVED: [],
+    RESOLVED: [
+      "REOPEN_CASE",
+    ],
     CANCELLED: [],
   },
 
@@ -82,7 +94,9 @@ export const registry: Registry = {
     WAITING_STORE: [],
     WAITING_CUSTOMER: [],
     IN_PROGRESS: [],
-    RESOLVED: [],
+    RESOLVED: [
+      "REOPEN_CASE",
+    ],
     CANCELLED: [],
   },
 
@@ -91,7 +105,9 @@ export const registry: Registry = {
     WAITING_STORE: [],
     WAITING_CUSTOMER: [],
     IN_PROGRESS: [],
-    RESOLVED: [],
+    RESOLVED: [
+      "REOPEN_CASE",
+    ],
     CANCELLED: [],
   },
 };

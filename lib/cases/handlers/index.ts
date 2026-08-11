@@ -9,11 +9,14 @@ export const ACTION_HANDLERS: Record<
   CaseAction,
   ActionHandler
 > = {
-  REQUEST_STORE: new DefaultHandler(),
+  REQUEST_STORE:
+    new DefaultHandler(),
 
-  STORE_HAS_STOCK: new DefaultHandler(),
+  STORE_HAS_STOCK:
+    new DefaultHandler(),
 
-  STORE_NO_STOCK: new DefaultHandler(),
+  STORE_NO_STOCK:
+    new DefaultHandler(),
 
   OFFER_ALTERNATIVE:
     new OfferAlternativeHandler(),
@@ -34,5 +37,8 @@ export const ACTION_HANDLERS: Record<
     new DefaultHandler(),
 
   CANCEL_CASE:
+    new DefaultHandler(),
+
+  REOPEN_CASE:
     new DefaultHandler(),
 };

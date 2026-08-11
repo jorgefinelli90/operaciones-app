@@ -5,6 +5,7 @@ import {
   PackageCheck,
   PackageSearch,
   RefreshCcw,
+  RotateCcw,
   Store,
   UserCheck,
   UserX,
@@ -42,6 +43,7 @@ export const ACTION_REGISTRY: Record<
 > = {
   REQUEST_STORE: {
     label: "Solicitar al depósito",
+
     description:
       "Solicita la búsqueda del producto.",
 
@@ -180,5 +182,22 @@ export const ACTION_REGISTRY: Record<
     icon: CircleX,
 
     confirm: true,
+  },
+
+  REOPEN_CASE: {
+    label: "Reabrir caso",
+
+    description:
+      "Volver a abrir el caso para continuar trabajando.",
+
+    color: "blue",
+    variant: "primary",
+
+    icon: RotateCcw,
+
+    confirm: true,
+
+    confirmDescription:
+      "¿Querés reabrir este caso?",
   },
 };

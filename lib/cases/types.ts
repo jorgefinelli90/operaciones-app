@@ -24,9 +24,10 @@ export type CaseAction =
   | "RESERVE_PRODUCT"
   | "SHIP_PRODUCT"
   | "CLOSE_CASE"
-  | "CANCEL_CASE";
+  | "CANCEL_CASE"
+  | "REOPEN_CASE";
 
-  export type CaseEventAction =
+export type CaseEventAction =
   | "CASE_CREATED"
   | "STATUS_CHANGED"
   | "COMMENT_ADDED"

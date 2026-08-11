@@ -1,15 +1,17 @@
 import { supabase } from "@/lib/supabase/client";
 
 import type {
+  CaseAction,
+  CaseEventAction,
   CaseStatus,
   CaseType,
 } from "./types";
 
 export type CasePriority =
-    | "LOW"
-    | "NORMAL"
-    | "HIGH"
-    | "URGENT";
+  | "LOW"
+  | "NORMAL"
+  | "HIGH"
+  | "URGENT";
 
 export interface OrderCase {
   id: number;
@@ -39,25 +41,29 @@ export interface OrderCase {
   closed_at: string | null;
 }
 
-export interface OrderCaseWithProduct extends OrderCase {
+export interface OrderCaseWithProduct
+  extends OrderCase {
   original_sku: string;
   product_name: string;
 }
-
-import type { CaseEventAction, CaseAction } from "./types";
 
 export interface OrderCaseEvent {
   id: number;
 
   case_id: number;
 
-  action: CaseAction | CaseEventAction;
+  action:
+    | CaseAction
+    | CaseEventAction;
 
   from_status: string | null;
 
   to_status: string | null;
 
-  payload: Record<string, unknown>;
+  payload: Record<
+    string,
+    unknown
+  >;
 
   created_by: string | null;
 
@@ -73,17 +79,25 @@ export interface OrderCaseComment {
 
   internal: boolean;
 
-  created_by: string |null;
+  created_by: string | null;
 
   created_at: string;
 }
 
-export async function getCases(orderItemId: number) {
-  const { data, error } = await supabase
-    .from("order_cases")
-    .select("*")
-    .eq("order_item_id", orderItemId)
-    .order("created_at", { ascending: false });
+export async function getCases(
+  orderItemId: number,
+) {
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .select("*")
+      .eq(
+        "order_item_id",
+        orderItemId,
+      )
+      .order("created_at", {
+        ascending: false,
+      });
 
   if (error) throw error;
 
@@ -93,95 +107,126 @@ export async function getCases(orderItemId: number) {
 export async function getCasesWithProduct(
   orderId: string,
 ) {
-  const { data, error } = await supabase
-    .from("order_cases")
-    .select(`
-      *,
-      order_items!inner(
-        id,
-        sku,
-        product_name,
-        qty,
-        price
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .select(`
+        *,
+        order_items!inner(
+          id,
+          sku,
+          product_name,
+          qty,
+          price
+        )
+      `)
+      .eq(
+        "order_id",
+        orderId,
       )
-    `)
-    .eq("order_id", orderId)
-    .order("created_at", {
-      ascending: false,
-    });
+      .order("created_at", {
+        ascending: false,
+      });
 
   if (error) throw error;
 
-  return (data ?? []).map((item: any) => ({
-    ...item,
+  return (data ?? []).map(
+    (item: any) => ({
+      ...item,
 
-    order_item_id: item.order_items.id,
+      order_item_id:
+        item.order_items.id,
 
-    original_sku: item.order_items.sku,
+      original_sku:
+        item.order_items.sku,
 
-    product_name: item.order_items.product_name,
+      product_name:
+        item.order_items.product_name,
 
-    qty: item.order_items.qty,
+      qty:
+        item.order_items.qty,
 
-    price: item.order_items.price,
-  }));
+      price:
+        item.order_items.price,
+    }),
+  );
 }
 
-export async function getCase(caseId: number) {
-  const { data, error } = await supabase
-    .from("order_cases")
-    .select("*")
-    .eq("id", caseId)
-    .single();
+export async function getCase(
+  caseId: number,
+) {
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .select("*")
+      .eq("id", caseId)
+      .single();
 
   if (error) throw error;
 
   return data as OrderCase;
 }
 
-export async function createCase(input: {
-  orderId: string;
+export async function createCase(
+  input: {
+    orderId: string;
 
-  orderItemId: number;
+    orderItemId: number;
 
-  type: CaseType;
+    type: CaseType;
 
-  priority: CasePriority;
+    priority: CasePriority;
 
-  title?: string;
+    title?: string;
 
-  description?: string;
+    description?: string;
 
-  createdBy?: string;
-}) {
-  const { data, error } = await supabase
-    .from("order_cases")
-    .insert({
-      order_id: input.orderId,
+    createdBy?: string;
+  },
+) {
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .insert({
+        order_id:
+          input.orderId,
 
-      order_item_id: input.orderItemId,
+        order_item_id:
+          input.orderItemId,
 
-      type: input.type,
+        type: input.type,
 
-      priority: input.priority ?? "NORMAL",
+        priority:
+          input.priority ??
+          "NORMAL",
 
-      title: input.title ?? null,
+        title:
+          input.title ?? null,
 
-      description: input.description ?? null,
+        description:
+          input.description ??
+          null,
 
-      created_by: input.createdBy ?? null,
-    })
-    .select()
-    .single();
+        created_by:
+          input.createdBy ??
+          null,
+      })
+      .select()
+      .single();
 
   if (error) throw error;
 
-  const newCase = data as OrderCase;
+  const newCase =
+    data as OrderCase;
 
   await createEvent({
     caseId: newCase.id,
-    action: "CASE_CREATED",
-    createdBy: input.createdBy,
+
+    action:
+      "CASE_CREATED",
+
+    createdBy:
+      input.createdBy,
   });
 
   return newCase;
@@ -192,30 +237,58 @@ export async function updateCaseStatus(
   status: CaseStatus,
   createdBy?: string,
 ) {
-  const currentCase = await getCase(caseId);
+  const currentCase =
+    await getCase(caseId);
 
-  const values: Record<string, unknown> = {
+  const values: Record<
+    string,
+    unknown
+  > = {
     status,
   };
 
+  /*
+   * Un caso RESOLVED queda cerrado.
+   */
   if (status === "RESOLVED") {
-    values.closed_at = new Date().toISOString();
+    values.closed_at =
+      new Date().toISOString();
   }
 
-  const { data, error } = await supabase
-    .from("order_cases")
-    .update(values)
-    .eq("id", caseId)
-    .select()
-    .single();
+  /*
+   * Si el caso vuelve a OPEN,
+   * también debe volver a estar
+   * abierto a nivel de datos.
+   *
+   * Esto es fundamental para
+   * REOPEN_CASE.
+   */
+  if (status === "OPEN") {
+    values.closed_at = null;
+  }
+
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .update(values)
+      .eq("id", caseId)
+      .select()
+      .single();
 
   if (error) throw error;
 
   await createEvent({
     caseId,
-    action: "STATUS_CHANGED",
-    fromStatus: currentCase.status,
-    toStatus: status,
+
+    action:
+      "STATUS_CHANGED",
+
+    fromStatus:
+      currentCase.status,
+
+    toStatus:
+      status,
+
     createdBy,
   });
 
@@ -227,26 +300,35 @@ export async function updateCasePriority(
   priority: CasePriority,
   createdBy?: string,
 ) {
-  const currentCase = await getCase(caseId);
+  const currentCase =
+    await getCase(caseId);
 
-  const { data, error } = await supabase
-    .from("order_cases")
-    .update({
-      priority,
-    })
-    .eq("id", caseId)
-    .select()
-    .single();
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .update({
+        priority,
+      })
+      .eq("id", caseId)
+      .select()
+      .single();
 
   if (error) throw error;
 
   await createEvent({
     caseId,
-    action: "PRIORITY_CHANGED" as CaseAction,
+
+    action:
+      "PRIORITY_CHANGED" as CaseAction,
+
     payload: {
-      from: currentCase.priority,
-      to: priority,
+      from:
+        currentCase.priority,
+
+      to:
+        priority,
     },
+
     createdBy,
   });
 
@@ -258,124 +340,181 @@ export async function updateCaseAssignment(
   assignedTo: string | null,
   createdBy?: string,
 ) {
-  const currentCase = await getCase(caseId);
+  const currentCase =
+    await getCase(caseId);
 
-  const { data, error } = await supabase
-    .from("order_cases")
-    .update({
-      assigned_to: assignedTo,
-    })
-    .eq("id", caseId)
-    .select()
-    .single();
+  const { data, error } =
+    await supabase
+      .from("order_cases")
+      .update({
+        assigned_to:
+          assignedTo,
+      })
+      .eq("id", caseId)
+      .select()
+      .single();
 
   if (error) throw error;
 
   await createEvent({
     caseId,
-    action: "ASSIGNMENT_CHANGED" as CaseAction,
+
+    action:
+      "ASSIGNMENT_CHANGED" as CaseAction,
+
     payload: {
-      from: currentCase.assigned_to,
-      to: assignedTo,
+      from:
+        currentCase.assigned_to,
+
+      to:
+        assignedTo,
     },
+
     createdBy,
   });
 
   return data as OrderCase;
 }
 
+export async function createEvent(
+  input: {
+    caseId: number;
 
-export async function createEvent(input: {
-  caseId: number;
+    action:
+      | CaseAction
+      | CaseEventAction;
 
-  action: CaseAction | CaseEventAction;
+    fromStatus?: string;
 
-  fromStatus?: string;
+    toStatus?: string;
 
-  toStatus?: string;
+    payload?: Record<
+      string,
+      unknown
+    >;
 
-  payload?: Record<string, unknown>;
+    createdBy?: string;
+  },
+) {
+  const { data, error } =
+    await supabase
+      .from("order_case_events")
+      .insert({
+        case_id:
+          input.caseId,
 
-  createdBy?: string;
-}) {
-  const { data, error } = await supabase
-    .from("order_case_events")
-    .insert({
-      case_id: input.caseId,
+        action:
+          input.action,
 
-      action: input.action,
+        from_status:
+          input.fromStatus ??
+          null,
 
-      from_status: input.fromStatus ?? null,
+        to_status:
+          input.toStatus ??
+          null,
 
-      to_status: input.toStatus ?? null,
+        payload:
+          input.payload ?? {},
 
-      payload: input.payload ?? {},
-
-      created_by: input.createdBy ?? null,
-    })
-    .select()
-    .single();
+        created_by:
+          input.createdBy ??
+          null,
+      })
+      .select()
+      .single();
 
   if (error) throw error;
 
   return data as OrderCaseEvent;
 }
 
-export async function getEvents(caseId: number) {
-  const { data, error } = await supabase
-    .from("order_case_events")
-    .select("*")
-    .eq("case_id", caseId)
-    .order("created_at");
+export async function getEvents(
+  caseId: number,
+) {
+  const { data, error } =
+    await supabase
+      .from("order_case_events")
+      .select("*")
+      .eq(
+        "case_id",
+        caseId,
+      )
+      .order("created_at");
 
   if (error) throw error;
 
   return data as OrderCaseEvent[];
 }
 
-export async function addComment(input: {
-  caseId: number;
+export async function addComment(
+  input: {
+    caseId: number;
 
-  comment: string;
+    comment: string;
 
-  internal?: boolean;
+    internal?: boolean;
 
-  createdBy?: string;
-}) {
-  const { data, error } = await supabase
-    .from("order_case_comments")
-    .insert({
-      case_id: input.caseId,
+    createdBy?: string;
+  },
+) {
+  const { data, error } =
+    await supabase
+      .from(
+        "order_case_comments",
+      )
+      .insert({
+        case_id:
+          input.caseId,
 
-      comment: input.comment,
+        comment:
+          input.comment,
 
-      internal: input.internal ?? true,
+        internal:
+          input.internal ?? true,
 
-      created_by: input.createdBy ?? null,
-    })
-    .select()
-    .single();
+        created_by:
+          input.createdBy ??
+          null,
+      })
+      .select()
+      .single();
 
   if (error) throw error;
 
   await createEvent({
-    caseId: input.caseId,
-    action: "COMMENT_ADDED",
+    caseId:
+      input.caseId,
+
+    action:
+      "COMMENT_ADDED",
+
     payload: {
-      comment: input.comment,
+      comment:
+        input.comment,
     },
-    createdBy: input.createdBy,
+
+    createdBy:
+      input.createdBy,
   });
 
   return data as OrderCaseComment;
 }
 
-export async function getComments(caseId: number) {
-  const { data, error } = await supabase
-    .from("order_case_comments")
-    .select("*")
-    .eq("case_id", caseId)
-    .order("created_at");
+export async function getComments(
+  caseId: number,
+) {
+  const { data, error } =
+    await supabase
+      .from(
+        "order_case_comments",
+      )
+      .select("*")
+      .eq(
+        "case_id",
+        caseId,
+      )
+      .order("created_at");
 
   if (error) throw error;
 

@@ -1,27 +1,48 @@
-import type { CaseAction, CaseStatus } from "./types";
+import type {
+  CaseAction,
+  CaseStatus,
+} from "./types";
 
-export const transitions: Record<CaseAction, CaseStatus> = {
-  REQUEST_STORE: "WAITING_STORE",
+export const transitions: Record<
+  CaseAction,
+  CaseStatus
+> = {
+  REQUEST_STORE:
+    "WAITING_STORE",
 
-  STORE_HAS_STOCK: "IN_PROGRESS",
+  STORE_HAS_STOCK:
+    "IN_PROGRESS",
 
-  STORE_NO_STOCK: "WAITING_CUSTOMER",
+  STORE_NO_STOCK:
+    "WAITING_CUSTOMER",
 
-  OFFER_ALTERNATIVE: "WAITING_CUSTOMER",
+  OFFER_ALTERNATIVE:
+    "WAITING_CUSTOMER",
 
-  CUSTOMER_ACCEPTS: "IN_PROGRESS",
+  CUSTOMER_ACCEPTS:
+    "IN_PROGRESS",
 
-  CUSTOMER_REJECTS: "OPEN",
+  CUSTOMER_REJECTS:
+    "OPEN",
 
-  RESERVE_PRODUCT: "IN_PROGRESS",
+  RESERVE_PRODUCT:
+    "IN_PROGRESS",
 
-  SHIP_PRODUCT: "RESOLVED",
+  SHIP_PRODUCT:
+    "RESOLVED",
 
-  CLOSE_CASE: "RESOLVED",
+  CLOSE_CASE:
+    "RESOLVED",
 
-  CANCEL_CASE: "CANCELLED",
+  CANCEL_CASE:
+    "CANCELLED",
+
+  REOPEN_CASE:
+    "OPEN",
 };
 
-export function getNextStatus(action: CaseAction): CaseStatus {
+export function getNextStatus(
+  action: CaseAction,
+): CaseStatus {
   return transitions[action];
 }
