@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Circle,
   Clock3,
+  MessageSquare,
   PackageCheck,
   RefreshCcw,
   UserRound,
@@ -40,12 +41,18 @@ function getEventIcon(
     case "STATUS_CHANGED":
       return RefreshCcw;
 
+    case "PRIORITY_CHANGED":
+      return RefreshCcw;
+
+    case "ASSIGNMENT_CHANGED":
+      return UserRound;
+
     case "PRODUCT_RESERVED":
     case "PRODUCT_SHIPPED":
       return PackageCheck;
 
     case "COMMENT_ADDED":
-      return UserRound;
+      return MessageSquare;
 
     case "CASE_RESOLVED":
       return CheckCircle2;
@@ -211,6 +218,8 @@ export function CaseTimeline({
 
                 <div className="rounded-lg border bg-card px-3 py-3">
 
+                  {/* HEADER */}
+
                   <div className="flex items-start justify-between gap-3">
 
                     <div className="min-w-0">
@@ -256,6 +265,37 @@ export function CaseTimeline({
                       </div>
                     )}
 
+                  {/* COMENTARIO */}
+
+                  {String(
+                    event.action,
+                  ) === "COMMENT_ADDED" &&
+                    typeof event.payload
+                      ?.comment ===
+                      "string" && (
+                      <div className="mt-3 rounded-lg bg-muted/60 p-3">
+
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+
+                          <MessageSquare
+                            size={13}
+                          />
+
+                          Comentario
+
+                        </div>
+
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+                          {
+                            event
+                              .payload
+                              .comment
+                          }
+                        </p>
+
+                      </div>
+                    )}
+
                   {/* PAYLOAD */}
 
                   {event.payload &&
@@ -267,6 +307,9 @@ export function CaseTimeline({
                         payload={
                           event.payload
                         }
+                        action={String(
+                          event.action,
+                        )}
                       />
                     )}
 
@@ -285,21 +328,39 @@ export function CaseTimeline({
 
 function EventPayload({
   payload,
+  action,
 }: {
   payload: Record<
     string,
     unknown
   >;
+  action: string;
 }) {
   const entries =
     Object.entries(
       payload,
     ).filter(
-      ([key, value]) =>
-        value !== null &&
-        value !== undefined &&
-        key !== "comment",
-      );
+      ([key, value]) => {
+        if (
+          value === null ||
+          value === undefined
+        ) {
+          return false;
+        }
+
+        // El comentario ya tiene
+        // su bloque visual propio.
+        if (
+          action ===
+            "COMMENT_ADDED" &&
+          key === "comment"
+        ) {
+          return false;
+        }
+
+        return true;
+      },
+    );
 
   if (!entries.length) {
     return null;
@@ -314,15 +375,18 @@ function EventPayload({
             key={key}
             className="text-xs text-muted-foreground"
           >
+
             <span className="font-medium text-foreground">
               {formatPayloadKey(
                 key,
               )}
               :
             </span>{" "}
+
             {formatPayloadValue(
               value,
             )}
+
           </div>
         ),
       )}
@@ -339,10 +403,14 @@ function formatPayloadKey(
     to: "Nuevo",
     priority: "Prioridad",
     assigned_to: "Asignado a",
-    from_priority: "Prioridad anterior",
-    to_priority: "Nueva prioridad",
-    from_assignment: "Asignación anterior",
-    to_assignment: "Nueva asignación",
+    from_priority:
+      "Prioridad anterior",
+    to_priority:
+      "Nueva prioridad",
+    from_assignment:
+      "Asignación anterior",
+    to_assignment:
+      "Nueva asignación",
   };
 
   return (
@@ -365,7 +433,8 @@ function formatPayloadValue(
     URGENT: "Urgente",
 
     OPEN: "Abierto",
-    WAITING_STORE: "Esperando tienda",
+    WAITING_STORE:
+      "Esperando tienda",
     WAITING_CUSTOMER:
       "Esperando cliente",
     IN_PROGRESS: "En proceso",
@@ -392,7 +461,9 @@ function formatPayloadValue(
     typeof value === "object" &&
     value !== null
   ) {
-    return JSON.stringify(value);
+    return JSON.stringify(
+      value,
+    );
   }
 
   return String(value);
