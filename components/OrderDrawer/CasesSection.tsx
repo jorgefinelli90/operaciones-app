@@ -21,16 +21,18 @@ export function CasesSection({
   orderId,
   orderItemId,
 }: Props) {
-  const [cases, setCases] = useState<
-    OrderCaseWithProduct[]
-  >([]);
+  const [cases, setCases] =
+    useState<OrderCaseWithProduct[]>(
+      [],
+    );
 
   const [
     selectedCase,
     setSelectedCase,
-  ] = useState<
-    OrderCaseWithProduct | null
-  >(null);
+  ] =
+    useState<OrderCaseWithProduct | null>(
+      null,
+    );
 
   const [loading, setLoading] =
     useState(true);
@@ -57,28 +59,27 @@ export function CasesSection({
             Number(orderItemId),
         );
 
-      setCases(filteredCases);
+      setCases(
+        filteredCases,
+      );
 
-      /*
-       * Si hay un caso abierto en el drawer,
-       * actualizamos también selectedCase.
-       *
-       * Esto evita que el drawer siga mostrando
-       * información vieja después de una modificación.
-       */
-      setSelectedCase((current) => {
-        if (!current) {
-          return current;
-        }
+      setSelectedCase(
+        (current) => {
+          if (!current) {
+            return current;
+          }
 
-        const updatedCase =
-          filteredCases.find(
-            (c) =>
-              c.id === current.id,
+          const updatedCase =
+            filteredCases.find(
+              (c) =>
+                c.id === current.id,
+            );
+
+          return (
+            updatedCase ?? current
           );
-
-        return updatedCase ?? current;
-      });
+        },
+      );
     } catch (error) {
       console.error(
         "Error cargando casos:",
@@ -115,19 +116,16 @@ export function CasesSection({
         },
       );
 
-      /*
-       * También actualizamos el card
-       * correspondiente.
-       */
-      setCases((current) =>
-        current.map((item) =>
-          item.id === updated.id
-            ? {
-                ...item,
-                ...updated,
-              }
-            : item,
-        ),
+      setCases(
+        (current) =>
+          current.map((item) =>
+            item.id === updated.id
+              ? {
+                  ...item,
+                  ...updated,
+                }
+              : item,
+          ),
       );
     } catch (error) {
       console.error(
@@ -147,7 +145,10 @@ export function CasesSection({
   function handleOpenCase(
     selected: OrderCaseWithProduct,
   ) {
-    setSelectedCase(selected);
+    setSelectedCase(
+      selected,
+    );
+
     setDrawerOpen(true);
   }
 
@@ -173,7 +174,7 @@ export function CasesSection({
             onClick={() =>
               setOpenModal(true)
             }
-            className="rounded bg-black px-3 py-1 text-xs text-white"
+            className="rounded bg-black px-3 py-1 text-xs text-white transition hover:bg-neutral-800"
           >
             Nuevo caso
           </button>
@@ -183,7 +184,7 @@ export function CasesSection({
         {/* LOADING */}
 
         {loading && (
-          <div className="text-sm text-neutral-500">
+          <div className="py-2 text-sm text-neutral-500">
             Cargando...
           </div>
         )}
@@ -205,7 +206,9 @@ export function CasesSection({
             <CaseCard
               key={item.id}
               item={item}
-              onOpen={handleOpenCase}
+              onOpen={
+                handleOpenCase
+              }
             />
           ))}
 
@@ -216,7 +219,9 @@ export function CasesSection({
       <CaseDrawer
         open={drawerOpen}
         item={selectedCase}
-        onClose={handleCloseDrawer}
+        onClose={
+          handleCloseDrawer
+        }
         onUpdated={
           refreshSelectedCase
         }
@@ -229,9 +234,13 @@ export function CasesSection({
         onClose={() =>
           setOpenModal(false)
         }
-        onCreated={loadCases}
+        onCreated={
+          loadCases
+        }
         orderId={orderId}
-        orderItemId={orderItemId}
+        orderItemId={
+          orderItemId
+        }
       />
     </>
   );

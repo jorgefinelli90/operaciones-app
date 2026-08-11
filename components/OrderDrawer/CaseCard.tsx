@@ -17,9 +17,6 @@ import {
 
 import type {
   CasePriority,
-} from "@/lib/cases/repository";
-
-import type {
   OrderCaseWithProduct,
 } from "@/lib/cases/repository";
 
@@ -33,17 +30,24 @@ interface Props {
 
 const STATUS_COLORS = {
   OPEN: "bg-yellow-100 text-yellow-800",
-  WAITING_STORE: "bg-orange-100 text-orange-800",
-  WAITING_CUSTOMER: "bg-blue-100 text-blue-800",
-  IN_PROGRESS: "bg-indigo-100 text-indigo-800",
-  RESOLVED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  WAITING_STORE:
+    "bg-orange-100 text-orange-800",
+  WAITING_CUSTOMER:
+    "bg-blue-100 text-blue-800",
+  IN_PROGRESS:
+    "bg-indigo-100 text-indigo-800",
+  RESOLVED:
+    "bg-green-100 text-green-800",
+  CANCELLED:
+    "bg-red-100 text-red-800",
 } as const;
 
 const STATUS_LABELS = {
   OPEN: "Abierto",
-  WAITING_STORE: "Esperando tienda",
-  WAITING_CUSTOMER: "Esperando cliente",
+  WAITING_STORE:
+    "Esperando tienda",
+  WAITING_CUSTOMER:
+    "Esperando cliente",
   IN_PROGRESS: "En proceso",
   RESOLVED: "Resuelto",
   CANCELLED: "Cancelado",
@@ -101,34 +105,55 @@ export function CaseCard({
     );
 
   const [assignedTo, setAssignedTo] =
-    useState(item.assigned_to ?? "");
+    useState(
+      item.assigned_to ?? "",
+    );
 
-  const [editingPriority, setEditingPriority] =
-    useState(false);
+  const [
+    editingPriority,
+    setEditingPriority,
+  ] = useState(false);
 
-  const [editingAssignment, setEditingAssignment] =
-    useState(false);
+  const [
+    editingAssignment,
+    setEditingAssignment,
+  ] = useState(false);
 
-  const [savingPriority, setSavingPriority] =
-    useState(false);
+  const [
+    savingPriority,
+    setSavingPriority,
+  ] = useState(false);
 
-  const [savingAssignment, setSavingAssignment] =
-    useState(false);
+  const [
+    savingAssignment,
+    setSavingAssignment,
+  ] = useState(false);
 
-  const [assignmentValue, setAssignmentValue] =
-    useState(item.assigned_to ?? "");
+  const [
+    assignmentValue,
+    setAssignmentValue,
+  ] = useState(
+    item.assigned_to ?? "",
+  );
 
   const statusLabel =
     STATUS_LABELS[item.status] ??
-    item.status.replaceAll("_", " ");
+    item.status.replaceAll(
+      "_",
+      " ",
+    );
 
   const typeLabel =
     TYPE_LABELS[item.type] ??
-    item.type.replaceAll("_", " ");
+    item.type.replaceAll(
+      "_",
+      " ",
+    );
 
   const priorityLabel =
     PRIORITIES.find(
-      (value) => value.value === priority,
+      (value) =>
+        value.value === priority,
     )?.label ?? "Normal";
 
   const priorityColor =
@@ -223,7 +248,9 @@ export function CaseCard({
 
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-              STATUS_COLORS[item.status]
+              STATUS_COLORS[
+                item.status
+              ]
             }`}
           >
             {statusLabel}
@@ -263,7 +290,9 @@ export function CaseCard({
                 <button
                   type="button"
                   onClick={() =>
-                    setEditingPriority(true)
+                    setEditingPriority(
+                      true,
+                    )
                   }
                   className="text-muted-foreground transition hover:text-foreground"
                   title="Cambiar prioridad"
@@ -280,10 +309,13 @@ export function CaseCard({
                 <select
                   autoFocus
                   value={priority}
-                  disabled={savingPriority}
+                  disabled={
+                    savingPriority
+                  }
                   onChange={(event) =>
                     handlePriorityChange(
-                      event.target.value as CasePriority,
+                      event.target
+                        .value as CasePriority,
                     )
                   }
                   className="w-full rounded border border-border bg-background px-1.5 py-1 text-xs outline-none"
@@ -291,10 +323,16 @@ export function CaseCard({
                   {PRIORITIES.map(
                     (option) => (
                       <option
-                        key={option.value}
-                        value={option.value}
+                        key={
+                          option.value
+                        }
+                        value={
+                          option.value
+                        }
                       >
-                        {option.label}
+                        {
+                          option.label
+                        }
                       </option>
                     ),
                   )}
@@ -312,7 +350,9 @@ export function CaseCard({
               <button
                 type="button"
                 onClick={() =>
-                  setEditingPriority(true)
+                  setEditingPriority(
+                    true,
+                  )
                 }
                 className={`mt-1 text-left text-xs font-medium ${priorityColor}`}
               >
@@ -336,7 +376,9 @@ export function CaseCard({
                 <button
                   type="button"
                   onClick={() =>
-                    setEditingAssignment(true)
+                    setEditingAssignment(
+                      true,
+                    )
                   }
                   className="text-muted-foreground transition hover:text-foreground"
                   title="Cambiar asignación"
@@ -352,23 +394,32 @@ export function CaseCard({
 
                 <input
                   autoFocus
-                  value={assignmentValue}
-                  disabled={savingAssignment}
+                  value={
+                    assignmentValue
+                  }
+                  disabled={
+                    savingAssignment
+                  }
                   onChange={(event) =>
                     setAssignmentValue(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
-                  onKeyDown={(event) => {
+                  onKeyDown={(
+                    event,
+                  ) => {
                     if (
-                      event.key === "Enter"
+                      event.key ===
+                      "Enter"
                     ) {
                       event.preventDefault();
                       saveAssignment();
                     }
 
                     if (
-                      event.key === "Escape"
+                      event.key ===
+                      "Escape"
                     ) {
                       event.preventDefault();
                       cancelAssignment();
@@ -387,16 +438,22 @@ export function CaseCard({
                   <>
                     <button
                       type="button"
-                      onClick={saveAssignment}
+                      onClick={
+                        saveAssignment
+                      }
                       className="text-emerald-500 hover:text-emerald-400"
                       title="Guardar"
                     >
-                      <Check size={14} />
+                      <Check
+                        size={14}
+                      />
                     </button>
 
                     <button
                       type="button"
-                      onClick={cancelAssignment}
+                      onClick={
+                        cancelAssignment
+                      }
                       className="text-red-500 hover:text-red-400"
                       title="Cancelar"
                     >
@@ -410,7 +467,9 @@ export function CaseCard({
               <button
                 type="button"
                 onClick={() =>
-                  setEditingAssignment(true)
+                  setEditingAssignment(
+                    true,
+                  )
                 }
                 className="mt-1 block max-w-full truncate text-left text-xs font-medium"
               >
@@ -467,8 +526,6 @@ export function CaseCard({
 
           <div className="border-t px-5 pb-5 pt-5">
 
-            {/* SKU ORIGINAL / REEMPLAZO */}
-
             <div className="rounded-lg border bg-background p-4">
 
               <div className="text-xs font-medium text-neutral-500">
@@ -497,8 +554,6 @@ export function CaseCard({
 
             </div>
 
-            {/* DESCRIPCIÓN */}
-
             {item.description && (
               <div className="mt-4">
 
@@ -512,8 +567,6 @@ export function CaseCard({
 
               </div>
             )}
-
-            {/* FOOTER */}
 
             <div className="mt-5 flex items-center justify-between border-t pt-4">
 
