@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { CaseDrawer } from "./CaseDrawer";
 import { CaseCard } from "./CaseCard";
 import { NewCaseModal } from "./NewCaseModal";
 
 import {
+  getCase,
   getCasesWithProduct,
   type OrderCaseWithProduct,
 } from "@/lib/cases/repository";
@@ -19,53 +21,166 @@ export function CasesSection({
   orderId,
   orderItemId,
 }: Props) {
-  const [cases, setCases] = useState<OrderCaseWithProduct[]>([]);
-  const [selectedCase, setSelectedCase] =
-    useState<OrderCaseWithProduct | null>(null);
+  const [cases, setCases] = useState<
+    OrderCaseWithProduct[]
+  >([]);
 
-  const [loading, setLoading] = useState(true);
-  const [openModal, setOpenModal] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [
+    selectedCase,
+    setSelectedCase,
+  ] = useState<
+    OrderCaseWithProduct | null
+  >(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [openModal, setOpenModal] =
+    useState(false);
+
+  const [drawerOpen, setDrawerOpen] =
+    useState(false);
 
   async function loadCases() {
-    setLoading(true);
-
     try {
-      const data = await getCasesWithProduct(orderId);
+      setLoading(true);
 
-      const filteredCases = data.filter(
-        (c) => Number(c.order_item_id) === Number(orderItemId),
-      );
+      const data =
+        await getCasesWithProduct(
+          orderId,
+        );
+
+      const filteredCases =
+        data.filter(
+          (c) =>
+            Number(c.order_item_id) ===
+            Number(orderItemId),
+        );
 
       setCases(filteredCases);
+
+      /*
+       * Si hay un caso abierto en el drawer,
+       * actualizamos también selectedCase.
+       *
+       * Esto evita que el drawer siga mostrando
+       * información vieja después de una modificación.
+       */
+      setSelectedCase((current) => {
+        if (!current) {
+          return current;
+        }
+
+        const updatedCase =
+          filteredCases.find(
+            (c) =>
+              c.id === current.id,
+          );
+
+        return updatedCase ?? current;
+      });
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Error cargando casos:",
+        error,
+      );
+
       setCases([]);
     } finally {
       setLoading(false);
     }
   }
 
+  async function refreshSelectedCase() {
+    if (!selectedCase) {
+      return;
+    }
+
+    try {
+      const updated =
+        await getCase(
+          selectedCase.id,
+        );
+
+      setSelectedCase(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            ...updated,
+          };
+        },
+      );
+
+      /*
+       * También actualizamos el card
+       * correspondiente.
+       */
+      setCases((current) =>
+        current.map((item) =>
+          item.id === updated.id
+            ? {
+                ...item,
+                ...updated,
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
+      console.error(
+        "Error actualizando caso:",
+        error,
+      );
+    }
+  }
+
   useEffect(() => {
     loadCases();
-  }, [orderId, orderItemId]);
+  }, [
+    orderId,
+    orderItemId,
+  ]);
+
+  function handleOpenCase(
+    selected: OrderCaseWithProduct,
+  ) {
+    setSelectedCase(selected);
+    setDrawerOpen(true);
+  }
+
+  function handleCloseDrawer() {
+    setDrawerOpen(false);
+    setSelectedCase(null);
+  }
 
   return (
     <>
       <div className="space-y-3">
+
+        {/* HEADER */}
+
         <div className="flex items-center justify-between">
+
           <h3 className="text-sm font-semibold">
             Casos
           </h3>
 
           <button
             type="button"
-            onClick={() => setOpenModal(true)}
+            onClick={() =>
+              setOpenModal(true)
+            }
             className="rounded bg-black px-3 py-1 text-xs text-white"
           >
             Nuevo caso
           </button>
+
         </div>
+
+        {/* LOADING */}
 
         {loading && (
           <div className="text-sm text-neutral-500">
@@ -73,34 +188,47 @@ export function CasesSection({
           </div>
         )}
 
-        {!loading && cases.length === 0 && (
-          <div className="rounded border border-dashed p-4 text-sm text-neutral-500">
-            No hay casos para este producto.
-          </div>
-        )}
+        {/* SIN CASOS */}
+
+        {!loading &&
+          cases.length === 0 && (
+            <div className="rounded border border-dashed p-4 text-sm text-neutral-500">
+              No hay casos para este
+              producto.
+            </div>
+          )}
+
+        {/* CASOS */}
 
         {!loading &&
           cases.map((item) => (
             <CaseCard
               key={item.id}
               item={item}
-              onOpen={(selected) => {
-                setSelectedCase(selected);
-                setDrawerOpen(true);
-              }}
+              onOpen={handleOpenCase}
             />
           ))}
+
       </div>
+
+      {/* DRAWER */}
 
       <CaseDrawer
         open={drawerOpen}
         item={selectedCase}
-        onClose={() => setDrawerOpen(false)}
+        onClose={handleCloseDrawer}
+        onUpdated={
+          refreshSelectedCase
+        }
       />
+
+      {/* NUEVO CASO */}
 
       <NewCaseModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={() =>
+          setOpenModal(false)
+        }
         onCreated={loadCases}
         orderId={orderId}
         orderItemId={orderItemId}

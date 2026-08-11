@@ -10,34 +10,108 @@ import type { OrderCase } from "@/lib/cases/repository";
 
 interface Props {
   open: boolean;
+
   onClose: () => void;
+
   item: OrderCase | null;
+
+  onUpdated?: () =>
+    Promise<void> | void;
 }
 
 const STATUS_COLORS = {
-  OPEN: "bg-yellow-100 text-yellow-800",
-  WAITING_STORE: "bg-orange-100 text-orange-800",
-  WAITING_CUSTOMER: "bg-blue-100 text-blue-800",
-  IN_PROGRESS: "bg-indigo-100 text-indigo-800",
-  RESOLVED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  OPEN:
+    "bg-yellow-100 text-yellow-800",
+
+  WAITING_STORE:
+    "bg-orange-100 text-orange-800",
+
+  WAITING_CUSTOMER:
+    "bg-blue-100 text-blue-800",
+
+  IN_PROGRESS:
+    "bg-indigo-100 text-indigo-800",
+
+  RESOLVED:
+    "bg-green-100 text-green-800",
+
+  CANCELLED:
+    "bg-red-100 text-red-800",
+} as const;
+
+const STATUS_LABELS = {
+  OPEN: "Abierto",
+
+  WAITING_STORE:
+    "Esperando tienda",
+
+  WAITING_CUSTOMER:
+    "Esperando cliente",
+
+  IN_PROGRESS:
+    "En proceso",
+
+  RESOLVED:
+    "Resuelto",
+
+  CANCELLED:
+    "Cancelado",
+} as const;
+
+const TYPE_LABELS = {
+  NO_STOCK:
+    "Sin stock",
+
+  CHANGE:
+    "Cambio",
+
+  RETURN:
+    "Devolución",
+
+  INVOICE:
+    "Factura",
+
+  CHARGEBACK:
+    "Chargeback",
+
+  CLAIM:
+    "Reclamo",
 } as const;
 
 export function CaseDrawer({
   open,
   onClose,
   item,
+  onUpdated,
 }: Props) {
   if (!open || !item) {
     return null;
   }
 
+  const statusLabel =
+    STATUS_LABELS[item.status] ??
+    item.status.replaceAll(
+      "_",
+      " ",
+    );
+
+  const typeLabel =
+    TYPE_LABELS[item.type] ??
+    item.type.replaceAll(
+      "_",
+      " ",
+    );
+
   return (
     <>
+      {/* OVERLAY */}
+
       <div
         className="fixed inset-0 z-40 bg-black/40"
         onClick={onClose}
       />
+
+      {/* DRAWER */}
 
       <aside className="fixed right-0 top-0 z-50 flex h-screen w-[650px] flex-col border-l border-border bg-background shadow-xl">
 
@@ -46,13 +120,15 @@ export function CaseDrawer({
         <header className="flex items-center justify-between border-b border-border p-5">
 
           <div>
+
             <h2 className="text-lg font-semibold">
               Caso #{item.id}
             </h2>
 
             <p className="text-sm text-neutral-500">
-              {item.type.replaceAll("_", " ")}
+              {typeLabel}
             </p>
+
           </div>
 
           <button
@@ -73,24 +149,29 @@ export function CaseDrawer({
 
           <section className="rounded-xl border border-border p-5">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
 
-              <div>
+              <div className="min-w-0">
 
                 <h2 className="text-xl font-semibold">
-                  {item.title || "Caso"}
+                  {item.title ||
+                    "Caso"}
                 </h2>
 
                 <p className="mt-1 text-sm text-neutral-500">
-                  {item.type.replaceAll("_", " ")}
+                  {typeLabel}
                 </p>
 
               </div>
 
               <span
-                className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[item.status]}`}
+                className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${
+                  STATUS_COLORS[
+                    item.status
+                  ]
+                }`}
               >
-                {item.status.replaceAll("_", " ")}
+                {statusLabel}
               </span>
 
             </div>
@@ -109,18 +190,32 @@ export function CaseDrawer({
             title="Acciones disponibles"
             defaultOpen
           >
+
             <CaseActions
               item={item}
-              onExecuted={() => {
-                // No recargar la página.
-                // El drawer permanece abierto.
+              onExecuted={async () => {
+
+                /*
+                 * La acción ya se guardó.
+                 *
+                 * Ahora pedimos al padre que
+                 * vuelva a sincronizar el caso.
+                 *
+                 * NO hacemos reload.
+                 * NO cerramos el drawer.
+                 */
+
+                await onUpdated?.();
               }}
             />
+
           </Accordion>
 
           {/* HISTORIAL */}
 
-          <Accordion title="Línea de tiempo">
+          <Accordion
+            title="Línea de tiempo"
+          >
 
             <CaseTimeline
               caseId={item.id}
@@ -139,9 +234,11 @@ export function CaseDrawer({
               />
             }
           >
+
             <CaseComments
               caseId={item.id}
             />
+
           </Accordion>
 
         </div>

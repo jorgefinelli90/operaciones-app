@@ -1,5 +1,8 @@
 import { Analytics } from "@vercel/analytics/next";
-import type { Metadata, Viewport } from "next";
+import type {
+  Metadata,
+  Viewport,
+} from "next";
 import { Toaster } from "sonner";
 
 import "./globals.css";
@@ -18,7 +21,8 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   themeColor: [
     {
-      media: "(prefers-color-scheme: dark)",
+      media:
+        "(prefers-color-scheme: dark)",
       color: "#0a0a0a",
     },
   ],
@@ -46,9 +50,15 @@ export default function RootLayout({
           richColors
           closeButton
           duration={3000}
+          offset="24px"
+          toastOptions={{
+            className:
+              "z-[9999]",
+          }}
         />
 
-        {process.env.NODE_ENV === "production" && (
+        {process.env.NODE_ENV ===
+          "production" && (
           <Analytics />
         )}
       </body>
