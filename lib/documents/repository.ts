@@ -24,8 +24,7 @@ export async function getOrderDocuments(
     throw error;
   }
 
-  return (data ??
-    []) as OrderDocument[];
+  return (data ?? []) as OrderDocument[];
 }
 
 export async function getCaseDocuments(
@@ -47,8 +46,7 @@ export async function getCaseDocuments(
     throw error;
   }
 
-  return (data ??
-    []) as OrderDocument[];
+  return (data ?? []) as OrderDocument[];
 }
 
 export async function createOrderDocument(
@@ -57,9 +55,18 @@ export async function createOrderDocument(
   const number =
     input.number.trim();
 
+  const documentUrl =
+    input.documentUrl.trim();
+
   if (!number) {
     throw new Error(
       "El número de comprobante es obligatorio.",
+    );
+  }
+
+  if (!documentUrl) {
+    throw new Error(
+      "La URL del comprobante es obligatoria.",
     );
   }
 
@@ -69,9 +76,26 @@ export async function createOrderDocument(
     );
   }
 
-  if (input.amount < 0) {
+  if (!input.documentDate) {
     throw new Error(
-      "El importe no puede ser negativo.",
+      "La fecha del comprobante es obligatoria.",
+    );
+  }
+
+  if (
+    !Number.isFinite(input.amount) ||
+    input.amount < 0
+  ) {
+    throw new Error(
+      "El importe no es válido.",
+    );
+  }
+
+  try {
+    new URL(documentUrl);
+  } catch {
+    throw new Error(
+      "La URL del comprobante no es válida.",
     );
   }
 
@@ -92,6 +116,9 @@ export async function createOrderDocument(
           input.type,
 
         number,
+
+        document_url:
+          documentUrl,
 
         document_date:
           input.documentDate,

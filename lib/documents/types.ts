@@ -13,7 +13,19 @@ export interface OrderDocument {
 
   type: OrderDocumentType;
 
+  /**
+   * Número fiscal visible en el comprobante.
+   *
+   * Ejemplo:
+   * 0024-00093180
+   */
   number: string;
+
+  /**
+   * URL completa al comprobante
+   * en Stock Inteligente.
+   */
+  document_url: string;
 
   document_date: string;
 
@@ -37,7 +49,18 @@ export interface CreateOrderDocumentInput {
 
   type: OrderDocumentType;
 
+  /**
+   * Número fiscal visible.
+   *
+   * Ejemplo:
+   * 0024-00093180
+   */
   number: string;
+
+  /**
+   * URL completa del comprobante.
+   */
+  documentUrl: string;
 
   documentDate: string;
 
