@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import {
   CheckCircle2,
   Circle,
   Clock3,
+  ExternalLink,
+  FileText,
   MessageSquare,
   PackageCheck,
   RefreshCcw,
@@ -54,6 +57,9 @@ function getEventIcon(
     case "COMMENT_ADDED":
       return MessageSquare;
 
+    case "DOCUMENT_ADDED":
+      return FileText;
+
     case "CASE_RESOLVED":
       return CheckCircle2;
 
@@ -72,18 +78,70 @@ function formatDate(value: string) {
   ).format(new Date(value));
 }
 
+function formatDocumentDate(
+  value: string,
+) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat(
+    "es-AR",
+    {
+      dateStyle: "short",
+    },
+  ).format(
+    new Date(
+      `${value}T12:00:00`,
+    ),
+  );
+}
+
+function formatAmount(
+  value: number,
+) {
+  return new Intl.NumberFormat(
+    "es-AR",
+    {
+      style: "currency",
+      currency: "ARS",
+    },
+  ).format(value);
+}
+
 function getEventLabel(
   action: CaseAction | CaseEventAction,
 ) {
-  const labels: Record<string, string> = {
-    CASE_CREATED: "Caso creado",
-    STATUS_CHANGED: "Estado cambiado",
-    PRIORITY_CHANGED: "Prioridad cambiada",
-    ASSIGNMENT_CHANGED: "Asignación cambiada",
-    COMMENT_ADDED: "Comentario agregado",
-    PRODUCT_RESERVED: "Producto reservado",
-    PRODUCT_SHIPPED: "Producto despachado",
-    CASE_RESOLVED: "Caso resuelto",
+  const labels: Record<
+    string,
+    string
+  > = {
+    CASE_CREATED:
+      "Caso creado",
+
+    STATUS_CHANGED:
+      "Estado cambiado",
+
+    PRIORITY_CHANGED:
+      "Prioridad cambiada",
+
+    ASSIGNMENT_CHANGED:
+      "Asignación cambiada",
+
+    COMMENT_ADDED:
+      "Comentario agregado",
+
+    PRODUCT_RESERVED:
+      "Producto reservado",
+
+    PRODUCT_SHIPPED:
+      "Producto despachado",
+
+    DOCUMENT_ADDED:
+      "Comprobante cargado",
+
+    CASE_RESOLVED:
+      "Caso resuelto",
   };
 
   return (
@@ -92,8 +150,10 @@ function getEventLabel(
     action
       .replaceAll("_", " ")
       .toLowerCase()
-      .replace(/^./, (char) =>
-        char.toUpperCase(),
+      .replace(
+        /^./,
+        (char) =>
+          char.toUpperCase(),
       )
   );
 }
@@ -101,12 +161,18 @@ function getEventLabel(
 function getStatusLabel(
   status: string | null,
 ) {
-  if (!status) return null;
+  if (!status) {
+    return null;
+  }
 
   return (
     STATUS_LABELS[
       status as CaseStatus
-    ] ?? status.replaceAll("_", " ")
+    ] ??
+    status.replaceAll(
+      "_",
+      " ",
+    )
   );
 }
 
@@ -166,11 +232,12 @@ export function CaseTimeline({
 
   return (
     <div className="relative">
-
       {events.map(
         (event, index) => {
           const Icon =
-            getEventIcon(event.action);
+            getEventIcon(
+              event.action,
+            );
 
           const fromStatus =
             getStatusLabel(
@@ -186,12 +253,16 @@ export function CaseTimeline({
             index ===
             events.length - 1;
 
+          const action =
+            String(
+              event.action,
+            );
+
           return (
             <div
               key={event.id}
               className="relative flex gap-3"
             >
-
               {/* LÍNEA */}
 
               {!isLast && (
@@ -201,9 +272,7 @@ export function CaseTimeline({
               {/* ICONO */}
 
               <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground">
-
                 <Icon size={13} />
-
               </div>
 
               {/* EVENTO */}
@@ -215,33 +284,25 @@ export function CaseTimeline({
                     : "pb-5"
                 }`}
               >
-
                 <div className="rounded-lg border bg-card px-3 py-3">
-
                   {/* HEADER */}
 
                   <div className="flex items-start justify-between gap-3">
-
                     <div className="min-w-0">
-
                       <div className="text-sm font-medium">
                         {getEventLabel(
                           event.action,
                         )}
                       </div>
-
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
-
                       <Clock3 size={12} />
 
                       {formatDate(
                         event.created_at,
                       )}
-
                     </div>
-
                   </div>
 
                   {/* CAMBIO DE ESTADO */}
@@ -249,7 +310,6 @@ export function CaseTimeline({
                   {fromStatus &&
                     toStatus && (
                       <div className="mt-2 flex items-center gap-2 text-xs">
-
                         <span className="rounded-md bg-muted px-2 py-1">
                           {fromStatus}
                         </span>
@@ -261,28 +321,24 @@ export function CaseTimeline({
                         <span className="rounded-md bg-muted px-2 py-1">
                           {toStatus}
                         </span>
-
                       </div>
                     )}
 
                   {/* COMENTARIO */}
 
-                  {String(
-                    event.action,
-                  ) === "COMMENT_ADDED" &&
-                    typeof event.payload
+                  {action ===
+                    "COMMENT_ADDED" &&
+                    typeof event
+                      .payload
                       ?.comment ===
                       "string" && (
                       <div className="mt-3 rounded-lg bg-muted/60 p-3">
-
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-
                           <MessageSquare
                             size={13}
                           />
 
                           Comentario
-
                         </div>
 
                         <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
@@ -292,36 +348,216 @@ export function CaseTimeline({
                               .comment
                           }
                         </p>
-
                       </div>
                     )}
 
-                  {/* PAYLOAD */}
+                  {/* COMPROBANTE */}
 
-                  {event.payload &&
+                  {action ===
+                    "DOCUMENT_ADDED" && (
+                    <DocumentEvent
+                      payload={
+                        event.payload
+                      }
+                    />
+                  )}
+
+                  {/* PAYLOAD GENERAL */}
+
+                  {action !==
+                    "DOCUMENT_ADDED" &&
+                    event.payload &&
                     Object.keys(
                       event.payload,
-                    ).length >
-                      0 && (
+                    ).length > 0 && (
                       <EventPayload
                         payload={
                           event.payload
                         }
-                        action={String(
-                          event.action,
-                        )}
+                        action={action}
                       />
                     )}
-
                 </div>
-
               </div>
-
             </div>
           );
         },
       )}
+    </div>
+  );
+}
 
+function DocumentEvent({
+  payload,
+}: {
+  payload: Record<
+    string,
+    unknown
+  >;
+}) {
+  const documentType =
+    payload.documentType ===
+    "CREDIT_NOTE"
+      ? "NOTA DE CRÉDIT"
+      : "FACTURA";
+
+  const number =
+    typeof payload.number ===
+    "string"
+      ? payload.number
+      : "-";
+
+  const url =
+    typeof payload.documentUrl ===
+    "string"
+      ? payload.documentUrl
+      : null;
+
+  const amount =
+    typeof payload.amount ===
+    "number"
+      ? payload.amount
+      : typeof payload.amount ===
+          "string"
+        ? Number(
+            payload.amount,
+          )
+        : null;
+
+  const date =
+    typeof payload.documentDate ===
+    "string"
+      ? payload.documentDate
+      : null;
+
+  const reason =
+    typeof payload.reason ===
+    "string"
+      ? payload.reason
+      : null;
+
+  const comment =
+    typeof payload.comment ===
+    "string"
+      ? payload.comment
+      : null;
+
+  const isCreditNote =
+    payload.documentType ===
+    "CREDIT_NOTE";
+
+  return (
+    <div
+      className={`mt-3 rounded-xl border p-4 ${
+        isCreditNote
+          ? "border-orange-900/60 bg-orange-950/20"
+          : "border-blue-900/60 bg-blue-950/20"
+      }`}
+    >
+      {/* CABECERA */}
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <FileText
+            size={15}
+            className={
+              isCreditNote
+                ? "text-orange-400"
+                : "text-blue-400"
+            }
+          />
+
+          <span className="text-xs font-semibold tracking-wide">
+            {documentType}
+          </span>
+        </div>
+
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium transition hover:bg-secondary"
+          >
+            Ver comprobante
+
+            <ExternalLink
+              size={12}
+            />
+          </a>
+        )}
+      </div>
+
+      {/* INFORMACIÓN */}
+
+      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3">
+        <div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Número
+          </div>
+
+          <div className="mt-1 font-mono text-sm font-semibold">
+            {number}
+          </div>
+        </div>
+
+        {date && (
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Fecha
+            </div>
+
+            <div className="mt-1 text-sm">
+              {formatDocumentDate(
+                date,
+              )}
+            </div>
+          </div>
+        )}
+
+        {amount !== null &&
+          Number.isFinite(
+            amount,
+          ) && (
+            <div>
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Importe
+              </div>
+
+              <div className="mt-1 text-sm font-semibold">
+                {formatAmount(
+                  amount,
+                )}
+              </div>
+            </div>
+          )}
+
+        {reason && (
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Motivo
+            </div>
+
+            <div className="mt-1 text-sm">
+              {reason}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* COMENTARIO */}
+
+      {comment && (
+        <div className="mt-4 border-t border-border/60 pt-3">
+          <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Comentario
+          </div>
+
+          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
+            {comment}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -368,29 +604,24 @@ function EventPayload({
 
   return (
     <div className="mt-2 space-y-1">
-
       {entries.map(
         ([key, value]) => (
           <div
             key={key}
             className="text-xs text-muted-foreground"
           >
-
             <span className="font-medium text-foreground">
               {formatPayloadKey(
                 key,
               )}
               :
             </span>{" "}
-
             {formatPayloadValue(
               value,
             )}
-
           </div>
         ),
       )}
-
     </div>
   );
 }
@@ -398,27 +629,65 @@ function EventPayload({
 function formatPayloadKey(
   key: string,
 ) {
-  const labels: Record<string, string> = {
+  const labels: Record<
+    string,
+    string
+  > = {
     from: "Anterior",
+
     to: "Nuevo",
-    priority: "Prioridad",
-    assigned_to: "Asignado a",
+
+    priority:
+      "Prioridad",
+
+    assigned_to:
+      "Asignado a",
+
     from_priority:
       "Prioridad anterior",
+
     to_priority:
       "Nueva prioridad",
+
     from_assignment:
       "Asignación anterior",
+
     to_assignment:
       "Nueva asignación",
+
+    local_pickup:
+      "Local",
+
+    store:
+      "Sucursal",
+
+    sku:
+      "SKU",
+
+    replacement_sku:
+      "SKU reemplazo",
+
+    product_name:
+      "Producto",
+
+    comment:
+      "Comentario",
+
+    reason:
+      "Motivo",
   };
 
   return (
     labels[key] ??
     key
-      .replaceAll("_", " ")
-      .replace(/^./, (char) =>
-        char.toUpperCase(),
+      .replaceAll(
+        "_",
+        " ",
+      )
+      .replace(
+        /^./,
+        (char) =>
+          char.toUpperCase(),
       )
   );
 }
@@ -426,31 +695,47 @@ function formatPayloadKey(
 function formatPayloadValue(
   value: unknown,
 ) {
-  const labels: Record<string, string> = {
+  const labels: Record<
+    string,
+    string
+  > = {
     LOW: "Baja",
+
     NORMAL: "Normal",
+
     HIGH: "Alta",
+
     URGENT: "Urgente",
 
     OPEN: "Abierto",
+
     WAITING_STORE:
       "Esperando tienda",
+
     WAITING_CUSTOMER:
       "Esperando cliente",
-    IN_PROGRESS: "En proceso",
-    RESOLVED: "Resuelto",
-    CANCELLED: "Cancelado",
+
+    IN_PROGRESS:
+      "En proceso",
+
+    RESOLVED:
+      "Resuelto",
+
+    CANCELLED:
+      "Cancelado",
   };
 
   if (
-    typeof value === "string" &&
+    typeof value ===
+      "string" &&
     labels[value]
   ) {
     return labels[value];
   }
 
   if (
-    typeof value === "boolean"
+    typeof value ===
+    "boolean"
   ) {
     return value
       ? "Sí"
@@ -458,7 +743,8 @@ function formatPayloadValue(
   }
 
   if (
-    typeof value === "object" &&
+    typeof value ===
+      "object" &&
     value !== null
   ) {
     return JSON.stringify(

@@ -2,6 +2,16 @@ export type OrderDocumentType =
   | "INVOICE"
   | "CREDIT_NOTE";
 
+
+export type CaseEventAction =
+  | "CASE_CREATED"
+  | "STATUS_CHANGED"
+  | "COMMENT_ADDED"
+  | "ASSIGNED"
+  | "ACTION_EXECUTED"
+  | "DOCUMENT_ADDED";
+
+
 export interface OrderDocument {
   id: number;
 

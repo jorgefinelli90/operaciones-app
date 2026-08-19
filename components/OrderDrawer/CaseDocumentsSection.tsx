@@ -26,6 +26,8 @@ import type { OrderCase } from "@/lib/cases/repository";
 
 interface Props {
   item: OrderCase;
+
+  onDocumentCreated?: () => void;
 }
 
 const DOCUMENT_TYPE_LABELS: Record<
@@ -87,6 +89,7 @@ function formatDate(
 
 export function CaseDocumentsSection({
   item,
+  onDocumentCreated,
 }: Props) {
   const [documents, setDocuments] =
     useState<OrderDocument[]>([]);

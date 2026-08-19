@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase/client";
 
+import {
+  createEvent,
+} from "@/lib/cases/repository";
+
 import type {
   CreateOrderDocumentInput,
   OrderDocument,
@@ -144,7 +148,60 @@ export async function createOrderDocument(
     throw error;
   }
 
-  return data as OrderDocument;
+  const document =
+    data as OrderDocument;
+
+  /*
+   * El comprobante ya quedó guardado.
+   *
+   * Si pertenece a un caso,
+   * registramos también el evento
+   * correspondiente en el Timeline.
+   */
+  if (document.case_id) {
+    await createEvent({
+      caseId:
+        document.case_id,
+
+      action:
+        "DOCUMENT_ADDED",
+
+      payload: {
+        documentId:
+          document.id,
+
+        documentType:
+          document.type,
+
+        number:
+          document.number,
+
+        documentUrl:
+          document.document_url,
+
+        documentDate:
+          document.document_date,
+
+        amount:
+          document.amount,
+
+        reason:
+          document.reason,
+
+        comment:
+          document.comment,
+
+        orderItemId:
+          document.order_item_id,
+      },
+
+      createdBy:
+        document.created_by ??
+        undefined,
+    });
+  }
+
+  return document;
 }
 
 export async function deleteOrderDocument(
