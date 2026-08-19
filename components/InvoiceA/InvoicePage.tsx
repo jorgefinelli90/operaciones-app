@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/topbar";
 
-import { OrdersToolbar } from "@/app/orders/OrdersToolbar";
-import { OrdersFilters } from "@/app/orders/OrdersFilters";
+import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
+import { OrdersFilters } from "@/components/orders/OrdersFilters";
 
 import { InvoiceATable } from "./InvoiceATable";
 import { InvoiceDrawer } from "./InvoiceDrawer/InvoiceDrawer";
@@ -36,7 +36,8 @@ export function InvoicePage() {
         const data = await getInvoiceRequests();
 
         console.log(data[0]);
-console.log(data[0].orders);
+console.log(data[0].orders);  
+
 
         setRows(data);
       } catch (error) {

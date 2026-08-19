@@ -1,7 +1,7 @@
 "use client";
 
 import type { Order } from "@/types/orders";
-import { OrdersTable } from "@/app/orders/OrdersTable";
+import { OrdersTable } from "@/components/orders/OrdersTable";
 
 interface Props {
   orders: Order[];

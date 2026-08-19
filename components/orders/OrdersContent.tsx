@@ -6,9 +6,9 @@ import { CSVUploader } from "@/components/csv/CSVUploader";
 import { OrderDrawer } from "@/components/OrderDrawer/OrderDrawer";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/topbar";
-import { OrdersFilters } from "@/app/orders/OrdersFilters";
-import { OrdersTable } from "@/app/orders/OrdersTable";
-import { OrdersToolbar } from "@/app/orders/OrdersToolbar";
+import { OrdersFilters } from "@/components/orders/OrdersFilters";
+import { OrdersTable } from "@/components/orders/OrdersTable";
+import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
 import type { Order } from "@/types/orders";
 import { MissingProductsDrawer } from "@/components/MissingProducts/MissingProductsDrawer/MissingProductsDrawer";
 
