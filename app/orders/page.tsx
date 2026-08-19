@@ -6,9 +6,9 @@ import { getOrders } from "@/lib/orders/getOrders";
 export default function OrdersPage() {
   return (
     <OrdersContent
-      loader={() => getOrders(50)}
-      title="Órdenes"
-      subtitle="Últimos pedidos"
+      loader={getOrders}
+      title="Pedidos"
+      subtitle="Gestión y seguimiento de pedidos"
     />
   );
 }

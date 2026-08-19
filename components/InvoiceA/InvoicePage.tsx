@@ -28,6 +28,7 @@ export function InvoicePage() {
     status: "all",
     warehouse: "all",
     pickupStore: "all",
+    documents: "all",
   });
 
   useEffect(() => {

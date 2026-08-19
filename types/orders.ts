@@ -13,7 +13,6 @@ export interface OrderImport {
   deliveryCity: string;
   deliveryProvince: string;
 
-  // NUEVO
   shippingMethod: string;
   shippingDescription: string;
 
@@ -42,7 +41,9 @@ export interface Order {
   customer_name: string;
   shipping_method: string;
   shippingDescription: string;
+
   delivery_address: string;
+
   customer_firstname: string;
   customer_lastname: string;
   customer_phone: string;
@@ -71,4 +72,12 @@ export interface Order {
   imported_at: string;
   created_at: string;
   updated_at: string;
+
+  /**
+   * Comprobantes asociados al pedido.
+   *
+   * Se calculan desde order_documents.
+   */
+  hasInvoice: boolean;
+  hasCreditNote: boolean;
 }

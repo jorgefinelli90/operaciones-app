@@ -1,6 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import { CSVUploader } from "@/components/csv/CSVUploader";
 import { OrderDrawer } from "@/components/OrderDrawer/OrderDrawer";
@@ -9,16 +13,20 @@ import { TopBar } from "@/components/topbar";
 import { OrdersFilters } from "@/components/orders/OrdersFilters";
 import { OrdersTable } from "@/components/orders/OrdersTable";
 import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
-import type { Order } from "@/types/orders";
 import { MissingProductsDrawer } from "@/components/MissingProducts/MissingProductsDrawer/MissingProductsDrawer";
 
+import type { Order } from "@/types/orders";
+
 interface OrdersContentProps {
-  loader: () => Promise<Order[]>;
+  loader: (
+    limit?: number,
+    search?: string,
+    offset?: number,
+  ) => Promise<Order[]>;
+
   title: string;
   subtitle: string;
 }
-
-
 
 type SortKey =
   | "id"
@@ -27,271 +35,795 @@ type SortKey =
   | "grand_total"
   | "warehouse_status"
   | null;
-type SortDirection = "asc" | "desc" | null;
+
+type SortDirection =
+  | "asc"
+  | "desc"
+  | null;
+
+const PAGE_SIZE = 50;
+
+function normalizeStatus(
+  value: string,
+) {
+  return value
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      "",
+    )
+    .trim()
+    .toLowerCase();
+}
+
+function getShippingType(
+  shippingDescription: string,
+) {
+  const shipping =
+    shippingDescription
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        "",
+      )
+      .toLowerCase()
+      .trim();
+
+  if (
+    shipping.startsWith(
+      "amt - retiro en tienda",
+    )
+  ) {
+    return "pickup";
+  }
+
+  if (
+    shipping.startsWith(
+      "andreani - envio a domicilio",
+    )
+  ) {
+    return "andreani_domicilio";
+  }
+
+  if (
+    shipping.startsWith(
+      "andreani - retiro en sucursal",
+    )
+  ) {
+    return "andreani_sucursal";
+  }
+
+  if (
+    shipping.startsWith(
+      "envio rapido por treggo",
+    ) ||
+    shipping.startsWith(
+      "treggo",
+    )
+  ) {
+    return "treggo";
+  }
+
+  return "";
+}
+
+function getPickupStore(
+  shippingDescription: string,
+) {
+  const shipping =
+    shippingDescription
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        "",
+      )
+      .toLowerCase();
+
+  if (
+    !shipping.startsWith(
+      "amt - retiro en tienda",
+    )
+  ) {
+    return "";
+  }
+
+  const parts =
+    shippingDescription.split(
+      " - ",
+    );
+
+  return parts.length >= 3
+    ? parts[2].trim()
+    : "";
+}
 
 export function OrdersContent({
   loader,
   title,
   subtitle,
 }: OrdersContentProps) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({
-    status: "all",
-    warehouse: "all",
-    pickupStore: "all",
-  });
-  const [showCSVUploader, setShowCSVUploader] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [orders, setOrders] =
+    useState<Order[]>([]);
 
-  const handleWarehouseStatusUpdated = (
-    orderId: string,
-    newStatus: string,
-  ) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              warehouse_status: newStatus,
-            }
-          : order,
-      ),
-    );
+  const [loading, setLoading] =
+    useState(true);
 
-    setSelectedOrder((prev) =>
-      prev && prev.id === orderId
-        ? {
-            ...prev,
-            warehouse_status: newStatus,
-          }
-        : prev,
-    );
-  };
+  const [
+    selectedOrder,
+    setSelectedOrder,
+  ] =
+    useState<Order | null>(null);
 
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      if (sortDirection === "asc") {
-        setSortDirection("desc");
-      } else if (sortDirection === "desc") {
-        setSortKey(null);
-        setSortDirection(null);
+  const [
+    drawerOpen,
+    setDrawerOpen,
+  ] =
+    useState(false);
+
+  const [
+    searchInput,
+    setSearchInput,
+  ] =
+    useState("");
+
+  const [search, setSearch] =
+    useState("");
+
+  /*
+   * Página actual.
+   *
+   * 0 = pedidos 1-50
+   * 1 = pedidos 51-100
+   * 2 = pedidos 101-150
+   */
+  const [page, setPage] =
+    useState(0);
+
+  /*
+   * Si recibimos exactamente 50,
+   * suponemos que puede existir
+   * una página siguiente.
+   */
+  const [
+    hasNextPage,
+    setHasNextPage,
+  ] =
+    useState(false);
+
+  const [filters, setFilters] =
+    useState({
+      status: "all",
+      warehouse: "all",
+      pickupStore: "all",
+      documents: "all",
+    });
+
+  const [
+    showCSVUploader,
+    setShowCSVUploader,
+  ] =
+    useState(false);
+
+  const [sortKey, setSortKey] =
+    useState<SortKey>(null);
+
+  const [
+    sortDirection,
+    setSortDirection,
+  ] =
+    useState<SortDirection>(null);
+
+  /*
+   * ============================================================
+   * CARGAR PEDIDOS
+   * ============================================================
+   */
+
+  const loadOrders =
+    useCallback(async () => {
+      try {
+        setLoading(true);
+
+        const offset =
+          page * PAGE_SIZE;
+
+        const data =
+          await loader(
+            PAGE_SIZE,
+            search,
+            offset,
+          );
+
+        setOrders(data);
+
+        /*
+         * Si llegaron 50,
+         * puede haber otra página.
+         */
+        setHasNextPage(
+          data.length ===
+            PAGE_SIZE,
+        );
+      } catch (error) {
+        console.error(
+          "Error cargando pedidos:",
+          error,
+        );
+
+        setOrders([]);
+        setHasNextPage(false);
+      } finally {
+        setLoading(false);
       }
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
-    }
-  };
-
-  const loadOrders = useCallback(async () => {
-    const data = await loader();
-    setOrders(data);
-    setLoading(false);
-  }, [loader]);
+    }, [
+      loader,
+      search,
+      page,
+    ]);
 
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
 
-  let filteredOrders = orders.filter((order) => {
-    const searchText = search.toLowerCase().trim();
+  /*
+   * ============================================================
+   * BUSCAR
+   * ============================================================
+   */
 
-    const fullName = `${order.customer_firstname} ${order.customer_lastname}`
-      .toLowerCase()
-      .trim();
+  const handleSearch = () => {
+    const cleanSearch =
+      searchInput.trim();
 
-    const matchesSearch =
-      searchText === "" ||
-      order.id.toLowerCase().includes(searchText) ||
-      order.customer_firstname.toLowerCase().includes(searchText) ||
-      order.customer_lastname.toLowerCase().includes(searchText) ||
-      fullName.includes(searchText) ||
-      order.customer_email.toLowerCase().includes(searchText);
+    /*
+     * Una nueva búsqueda
+     * siempre empieza en página 1.
+     */
+    setPage(0);
 
-    const matchesStatus =
-      filters.status === "all" ||
-      order.warehouse_status.toLowerCase() === filters.status;
-
-    const shipping = order.shippingDescription.toLowerCase();
-
-    let shippingType = "";
-
-    if (shipping.startsWith("amt - retiro en tienda")) {
-      shippingType = "pickup";
-    } else if (shipping.startsWith("andreani - envio a domicilio")) {
-      shippingType = "andreani_domicilio";
-    } else if (shipping.startsWith("andreani - retiro en sucursal")) {
-      shippingType = "andreani_sucursal";
-    } else if (shipping.startsWith("envío rápido por treggo")) {
-      shippingType = "treggo";
+    if (
+      cleanSearch === search
+    ) {
+      return;
     }
 
-    const matchesWarehouse =
-      filters.warehouse === "all" || filters.warehouse === shippingType;
+    setSearch(
+      cleanSearch,
+    );
+  };
 
-    let pickupStore = "";
+  /*
+   * ============================================================
+   * LIMPIAR BÚSQUEDA
+   * ============================================================
+   */
 
-    if (shipping.startsWith("amt - retiro en tienda")) {
-      const parts = order.shippingDescription.split(" - ");
+  const handleClearSearch =
+    () => {
+      setSearchInput("");
+      setSearch("");
+      setPage(0);
+    };
 
-      pickupStore = parts.length >= 3 ? parts[2].trim() : "";
+  /*
+   * ============================================================
+   * PAGINACIÓN
+   * ============================================================
+   */
+
+  const handlePreviousPage =
+    () => {
+      if (page === 0) {
+        return;
+      }
+
+      setPage(
+        (current) =>
+          current - 1,
+      );
+    };
+
+  const handleNextPage =
+    () => {
+      if (!hasNextPage) {
+        return;
+      }
+
+      setPage(
+        (current) =>
+          current + 1,
+      );
+    };
+
+  /*
+   * ============================================================
+   * ACTUALIZAR ESTADO
+   * ============================================================
+   */
+
+  const handleWarehouseStatusUpdated =
+    (
+      orderId: string,
+      newStatus: string,
+    ) => {
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                warehouse_status:
+                  newStatus,
+              }
+            : order,
+        ),
+      );
+
+      setSelectedOrder(
+        (prev) =>
+          prev &&
+          prev.id === orderId
+            ? {
+                ...prev,
+                warehouse_status:
+                  newStatus,
+              }
+            : prev,
+      );
+    };
+
+  /*
+   * ============================================================
+   * ORDENAMIENTO
+   * ============================================================
+   */
+
+  const handleSort = (
+    key: SortKey,
+  ) => {
+    if (sortKey === key) {
+      if (
+        sortDirection ===
+        "asc"
+      ) {
+        setSortDirection(
+          "desc",
+        );
+      } else if (
+        sortDirection ===
+        "desc"
+      ) {
+        setSortKey(null);
+        setSortDirection(
+          null,
+        );
+      }
+    } else {
+      setSortKey(key);
+      setSortDirection(
+        "asc",
+      );
     }
+  };
 
-    const matchesPickup =
-      filters.pickupStore === "all" || pickupStore === filters.pickupStore;
+  /*
+   * ============================================================
+   * FILTROS
+   * ============================================================
+   */
 
-    return matchesSearch && matchesStatus && matchesWarehouse && matchesPickup;
-  });
+  let filteredOrders =
+    orders.filter((order) => {
+      const matchesStatus =
+        filters.status ===
+          "all" ||
+        normalizeStatus(
+          order.warehouse_status,
+        ) ===
+          normalizeStatus(
+            filters.status,
+          );
 
-  if (sortKey && sortDirection) {
-    filteredOrders = [...filteredOrders].sort((a, b) => {
-      let aValue: string | number = "";
-      let bValue: string | number = "";
+      const shippingType =
+        getShippingType(
+          order.shippingDescription,
+        );
 
-      switch (sortKey) {
-        case "id":
-          aValue = a.id;
-          bValue = b.id;
+      const matchesWarehouse =
+        filters.warehouse ===
+          "all" ||
+        shippingType ===
+          filters.warehouse;
+
+      const pickupStore =
+        getPickupStore(
+          order.shippingDescription,
+        );
+
+      const matchesPickup =
+        filters.pickupStore ===
+          "all" ||
+        pickupStore ===
+          filters.pickupStore;
+
+      const hasInvoice =
+        order.hasInvoice;
+
+      const hasCreditNote =
+        order.hasCreditNote;
+
+      let matchesDocuments =
+        true;
+
+      switch (
+        filters.documents
+      ) {
+        case "invoice":
+          matchesDocuments =
+            hasInvoice;
           break;
 
-        case "customer_firstname":
-          aValue = `${a.customer_firstname} ${a.customer_lastname}`;
-          bValue = `${b.customer_firstname} ${b.customer_lastname}`;
+        case "credit_note":
+          matchesDocuments =
+            hasCreditNote;
           break;
 
-        case "purchase_date":
-          aValue = new Date(a.purchase_date).getTime();
-          bValue = new Date(b.purchase_date).getTime();
+        case "both":
+          matchesDocuments =
+            hasInvoice &&
+            hasCreditNote;
           break;
 
-        case "grand_total":
-          aValue = a.grand_total;
-          bValue = b.grand_total;
-          break;
-
-        case "warehouse_status":
-          aValue = a.warehouse_status;
-          bValue = b.warehouse_status;
+        case "none":
+          matchesDocuments =
+            !hasInvoice &&
+            !hasCreditNote;
           break;
 
         default:
-          return 0;
+          matchesDocuments =
+            true;
       }
 
-      const isTextSort =
-        sortKey === "id" ||
-        sortKey === "customer_firstname" ||
-        sortKey === "warehouse_status";
-
-      if (isTextSort) {
-        const normalizedA = String(aValue).toLowerCase();
-        const normalizedB = String(bValue).toLowerCase();
-
-        if (normalizedA < normalizedB) return sortDirection === "asc" ? -1 : 1;
-        if (normalizedA > normalizedB) return sortDirection === "asc" ? 1 : -1;
-
-        return 0;
-      }
-
-      const numericA = aValue as number;
-      const numericB = bValue as number;
-
-      if (numericA < numericB) return sortDirection === "asc" ? -1 : 1;
-      if (numericA > numericB) return sortDirection === "asc" ? 1 : -1;
-
-      return 0;
+      return (
+        matchesStatus &&
+        matchesWarehouse &&
+        matchesPickup &&
+        matchesDocuments
+      );
     });
+
+  /*
+   * ============================================================
+   * ORDENAMIENTO LOCAL
+   * ============================================================
+   */
+
+  if (
+    sortKey &&
+    sortDirection
+  ) {
+    filteredOrders =
+      [...filteredOrders].sort(
+        (a, b) => {
+          let aValue:
+            | string
+            | number = "";
+
+          let bValue:
+            | string
+            | number = "";
+
+          switch (sortKey) {
+            case "id":
+              aValue = a.id;
+              bValue = b.id;
+              break;
+
+            case "customer_firstname":
+              aValue =
+                `${a.customer_firstname} ${a.customer_lastname}`;
+
+              bValue =
+                `${b.customer_firstname} ${b.customer_lastname}`;
+              break;
+
+            case "purchase_date":
+              aValue =
+                new Date(
+                  a.purchase_date,
+                ).getTime();
+
+              bValue =
+                new Date(
+                  b.purchase_date,
+                ).getTime();
+              break;
+
+            case "grand_total":
+              aValue =
+                a.grand_total;
+
+              bValue =
+                b.grand_total;
+              break;
+
+            case "warehouse_status":
+              aValue =
+                a.warehouse_status;
+
+              bValue =
+                b.warehouse_status;
+              break;
+
+            default:
+              return 0;
+          }
+
+          if (
+            typeof aValue ===
+              "string" ||
+            typeof bValue ===
+              "string"
+          ) {
+            const normalizedA =
+              String(
+                aValue,
+              ).toLowerCase();
+
+            const normalizedB =
+              String(
+                bValue,
+              ).toLowerCase();
+
+            if (
+              normalizedA <
+              normalizedB
+            ) {
+              return sortDirection ===
+                "asc"
+                ? -1
+                : 1;
+            }
+
+            if (
+              normalizedA >
+              normalizedB
+            ) {
+              return sortDirection ===
+                "asc"
+                ? 1
+                : -1;
+            }
+
+            return 0;
+          }
+
+          const numericA =
+            Number(aValue);
+
+          const numericB =
+            Number(bValue);
+
+          if (
+            numericA <
+            numericB
+          ) {
+            return sortDirection ===
+              "asc"
+              ? -1
+              : 1;
+          }
+
+          if (
+            numericA >
+            numericB
+          ) {
+            return sortDirection ===
+              "asc"
+              ? 1
+              : -1;
+          }
+
+          return 0;
+        },
+      );
   }
 
-  const pickupStores = Array.from(
-    new Set(
-      orders
-        .filter((order) =>
-          order.shippingDescription
-            .toLowerCase()
-            .startsWith("amt - retiro en tienda"),
-        )
-        .map((order) => {
-          const parts = order.shippingDescription.split(" - ");
+  /*
+   * ============================================================
+   * SUCURSA PICKUP
+   * ============================================================
+   */
 
-          return parts.length >= 3 ? parts[2].trim() : "";
-        })
-        .filter(Boolean),
-    ),
-  ).sort();
+  const pickupStores =
+    Array.from(
+      new Set(
+        orders
+          .map((order) =>
+            getPickupStore(
+              order.shippingDescription,
+            ),
+          )
+          .filter(Boolean),
+      ),
+    ).sort();
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
+
       <TopBar />
 
       <main className="ml-64 mt-16 p-6">
         <OrdersToolbar
           title={title}
           subtitle={subtitle}
-          showCSVUploader={showCSVUploader}
-          onToggleCSVUploader={() => setShowCSVUploader(!showCSVUploader)}
+          showCSVUploader={
+            showCSVUploader
+          }
+          onToggleCSVUploader={() =>
+            setShowCSVUploader(
+              (value) =>
+                !value,
+            )
+          }
         />
 
         {showCSVUploader && (
           <CSVUploader
             onImportFinished={() => {
               loadOrders();
-              setShowCSVUploader(false);
+
+              setShowCSVUploader(
+                false,
+              );
             }}
           />
         )}
 
         <OrdersFilters
-          search={search}
-          onSearchChange={setSearch}
+          search={searchInput}
+          onSearchChange={
+            setSearchInput
+          }
+          onSearch={
+            handleSearch
+          }
+          onClearSearch={
+            handleClearSearch
+          }
+          pickupStores={
+            pickupStores
+          }
           filters={filters}
-          pickupStores={pickupStores}
-          onFiltersChange={setFilters}
+          onFiltersChange={
+            setFilters
+          }
         />
 
-        <OrdersTable
-          orders={filteredOrders}
-          onOrderClick={(order) => {
-            setSelectedOrder(order);
-            setDrawerOpen(true);
-          }}
-        />
+        {loading ? (
+          <div className="rounded-lg border border-border bg-card p-10 text-center text-sm text-muted-foreground">
+            Cargando pedidos...
+          </div>
+        ) : (
+          <OrdersTable
+            orders={
+              filteredOrders
+            }
+            onOrderClick={(
+              order,
+            ) => {
+              setSelectedOrder(
+                order,
+              );
 
-        {title === "Productos faltantes" ? (
-  <MissingProductsDrawer
-    order={selectedOrder}
-    open={drawerOpen}
-    onClose={() => {
-      setDrawerOpen(false);
-      setSelectedOrder(null);
-    }}
-  />
-) : (
-  <OrderDrawer
-    order={selectedOrder}
-    open={drawerOpen}
-    onClose={() => {
-      setDrawerOpen(false);
-      setSelectedOrder(null);
-    }}
-    onWarehouseStatusUpdated={handleWarehouseStatusUpdated}
-  />
-)}
+              setDrawerOpen(
+                true,
+              );
+            }}
+          />
+        )}
+
+        {title ===
+        "Productos faltantes" ? (
+          <MissingProductsDrawer
+            order={
+              selectedOrder
+            }
+            open={
+              drawerOpen
+            }
+            onClose={() => {
+              setDrawerOpen(
+                false,
+              );
+
+              setSelectedOrder(
+                null,
+              );
+            }}
+          />
+        ) : (
+          <OrderDrawer
+            order={
+              selectedOrder
+            }
+            open={
+              drawerOpen
+            }
+            onClose={() => {
+              setDrawerOpen(
+                false,
+              );
+
+              setSelectedOrder(
+                null,
+              );
+            }}
+            onWarehouseStatusUpdated={
+              handleWarehouseStatusUpdated
+            }
+          />
+        )}
 
         <div className="mt-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Viendo {filteredOrders.length} de {orders.length} pedidos.
+            {search ? (
+              <>
+                Mostrando{" "}
+                {
+                  filteredOrders.length
+                }{" "}
+                coincidencias para{" "}
+                <span className="font-semibold text-foreground">
+                  "{search}"
+                </span>
+              </>
+            ) : (
+              <>
+                Página{" "}
+                {page + 1}{" "}
+                · Mostrando{" "}
+                {
+                  filteredOrders.length
+                }{" "}
+                pedidos
+              </>
+            )}
           </p>
+
           <div className="flex gap-2">
-            <button className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary transition-colors disabled:opacity-50">
-              Atras
+            <button
+              type="button"
+              onClick={
+                handlePreviousPage
+              }
+              disabled={
+                page === 0 ||
+                loading
+              }
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Atrás
             </button>
-            <button className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary transition-colors">
+
+            <button
+              type="button"
+              onClick={
+                handleNextPage
+              }
+              disabled={
+                !hasNextPage ||
+                loading
+              }
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            >
               Adelante
             </button>
           </div>

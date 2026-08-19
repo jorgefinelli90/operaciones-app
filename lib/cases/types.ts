@@ -32,4 +32,6 @@ export type CaseEventAction =
   | "STATUS_CHANGED"
   | "COMMENT_ADDED"
   | "ASSIGNED"
+  | "DOCUMENT_ADDED"
   | "ACTION_EXECUTED";
+  

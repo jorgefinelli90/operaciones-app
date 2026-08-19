@@ -20,4 +20,6 @@ export const EVENT_LABELS: Record<
   SHIP_PRODUCT: "Producto despachado",
   CLOSE_CASE: "Caso cerrado",
   CANCEL_CASE: "Caso cancelado",
+  REOPEN_CASE: "Caso reabierto",
+  DOCUMENT_ADDED: "Comprobante agregado",
 };
