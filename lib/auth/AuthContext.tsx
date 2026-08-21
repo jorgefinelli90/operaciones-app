@@ -11,20 +11,38 @@ import {
 
 import { supabase } from "@/lib/supabase/client";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { can as checkPermission } from "@/lib/auth/permissions";
+
 import type { CurrentUser } from "@/lib/auth/types";
 
 interface AuthContextValue {
   user: CurrentUser | null;
   loading: boolean;
+
+  /**
+   * Comprueba si el usuario puede ejecutar
+   * una determinada acción.
+   *
+   * ADMIN siempre devuelve true.
+   */
   can: (permission: string) => boolean;
+
+  /**
+   * Recarga el usuario y sus permisos
+   * desde Supabase.
+   */
   refreshUser: () => Promise<void>;
+
+  /**
+   * Cierra la sesión actual.
+   */
   signOut: () => Promise<void>;
 }
 
 const AuthContext =
-  createContext<AuthContextValue | undefined>(
-    undefined,
-  );
+  createContext<
+    AuthContextValue | undefined
+  >(undefined);
 
 export function AuthProvider({
   children,
@@ -39,21 +57,30 @@ export function AuthProvider({
 
   /*
    * ============================================================
-   * CARGAR USUARIO
+   * CARGAR / RECARGAR USUARIO
    * ============================================================
    */
 
   const refreshUser =
     useCallback(async () => {
-      const currentUser =
-        await getCurrentUser();
+      try {
+        const currentUser =
+          await getCurrentUser();
 
-      setUser(currentUser);
+        setUser(currentUser);
+      } catch (error) {
+        console.error(
+          "Error cargando usuario:",
+          error,
+        );
+
+        setUser(null);
+      }
     }, []);
 
   /*
    * ============================================================
-   * INICIALIZAR AUTH
+   * INICIALIZACIÓN
    * ============================================================
    */
 
@@ -70,6 +97,15 @@ export function AuthProvider({
         }
 
         setUser(currentUser);
+      } catch (error) {
+        console.error(
+          "Error inicializando autenticación:",
+          error,
+        );
+
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
         if (mounted) {
           setLoading(false);
@@ -81,7 +117,7 @@ export function AuthProvider({
 
     /*
      * ========================================================
-     * ESCUCHAR CAMBIOS DE SESIÓN
+     * ESCUCHAR CAMBIOS DE AUTH
      * ========================================================
      */
 
@@ -96,31 +132,59 @@ export function AuthProvider({
             return;
           }
 
+          /*
+           * LOGOUT
+           */
+
           if (
-            event === "SIGNED_OUT"
+            event ===
+            "SIGNED_OUT"
           ) {
             setUser(null);
+            setLoading(false);
             return;
           }
 
+          /*
+           * LOGIN
+           */
+
           if (
-            event === "SIGNED_IN" ||
             event ===
-              "TOKEN_REFRESHED"
+            "SIGNED_IN"
           ) {
-            /*
-             * Esperamos a que Supabase
-             * termine de actualizar la sesión
-             * antes de consultar el profile.
-             */
+            setLoading(true);
 
             await refreshUser();
+
+            if (mounted) {
+              setLoading(false);
+            }
+
+            return;
+          }
+
+          /*
+           * REFRESH DEL TOKEN
+           *
+           * No necesitamos volver a consultar
+           * constantemente el profile.
+           *
+           * El usuario actual sigue siendo válido.
+           */
+
+          if (
+            event ===
+            "TOKEN_REFRESHED"
+          ) {
+            return;
           }
         },
       );
 
     return () => {
       mounted = false;
+
       subscription.unsubscribe();
     };
   }, [refreshUser]);
@@ -131,34 +195,24 @@ export function AuthProvider({
    * ============================================================
    */
 
-  const can = useCallback(
-    (permission: string) => {
-      if (!user || !user.active) {
-        return false;
-      }
-
-      /*
-       * ADMIN = acceso total
-       */
-
-      if (user.role === "ADMIN") {
-        return true;
-      }
-
-      return user.permissions.includes(
-        permission,
-      );
-    },
-    [user],
-  );
+  const can =
+    useCallback(
+      (permission: string) => {
+        return checkPermission(
+          user,
+          permission,
+        );
+      },
+      [user],
+    );
 
   /*
    * ============================================================
-   * SIGN OUT
+   * LOGOUT
    * ============================================================
    */
 
-  const handleSignOut =
+  const signOut =
     useCallback(async () => {
       const {
         error,
@@ -193,14 +247,14 @@ export function AuthProvider({
         loading,
         can,
         refreshUser,
-        signOut: handleSignOut,
+        signOut,
       }),
       [
         user,
         loading,
         can,
         refreshUser,
-        handleSignOut,
+        signOut,
       ],
     );
 
@@ -215,7 +269,7 @@ export function AuthProvider({
 
 /*
  * ==============================================================
- * HOOK
+ * useAuth
  * ==============================================================
  */
 

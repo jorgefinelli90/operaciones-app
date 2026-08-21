@@ -11,6 +11,8 @@ import {
 import { ACTION_REGISTRY } from "@/lib/cases/actionRegistry";
 import { getAvailableActions } from "@/lib/cases/workflow";
 
+import { useAuth } from "@/lib/auth/AuthContext";
+
 import { ActionModal } from "./actions/ActionModal";
 import { RequestStoreForm } from "./actions/RequestStoreForm";
 
@@ -48,10 +50,117 @@ export function CaseActions({
   item,
   onExecuted,
 }: Props) {
-  const actions = getAvailableActions(
-    item.type,
-    item.status,
-  );
+  /*
+   * ============================================================
+   * AUTH / PERMISSIONS
+   * ============================================================
+   */
+
+  const {
+    user,
+    can,
+  } = useAuth();
+
+  /*
+   * ============================================================
+   * ACTIONS DISPONIBLES SEGÚN WORKFLOW
+   * ============================================================
+   */
+
+  const workflowActions =
+    getAvailableActions(
+      item.type,
+      item.status,
+    );
+
+  /*
+   * ============================================================
+   * FILTRAR ACCIONES SEGÚN PERMISOS
+   *
+   * ADMIN pasa siempre porque can() ya contempla
+   * el bypass del rol ADMIN.
+   * ============================================================
+   */
+
+  const actions =
+    workflowActions.filter(
+      (action) => {
+        /*
+         * Si no hay usuario autenticado,
+         * no mostramos acciones.
+         */
+
+        if (!user || !user.active) {
+          return false;
+        }
+
+        /*
+         * ------------------------------------------------------
+         * REQUEST_STORE
+         * ------------------------------------------------------
+         */
+
+        if (
+          action ===
+          "REQUEST_STORE"
+        ) {
+          return can(
+            "cases.request_store",
+          );
+        }
+
+        /*
+         * ------------------------------------------------------
+         * CANCEL_CASE
+         * ------------------------------------------------------
+         */
+
+        if (
+          action ===
+          "CANCEL_CASE"
+        ) {
+          return can(
+            "cases.cancel",
+          );
+        }
+
+        /*
+         * ------------------------------------------------------
+         * REOPEN_CASE
+         * ------------------------------------------------------
+         */
+
+        if (
+          action ===
+          "REOPEN_CASE"
+        ) {
+          return can(
+            "cases.reopen",
+          );
+        }
+
+        /*
+         * ------------------------------------------------------
+         * RESTO DE ACCIONES
+         *
+         * Las acciones operativas pasan por:
+         *
+         * cases.execute
+         *
+         * ------------------------------------------------------
+         */
+
+        return can(
+          "cases.execute",
+        );
+      },
+    );
+
+  /*
+   * ============================================================
+   * STATE
+   * ============================================================
+   */
 
   const [selectedAction, setSelectedAction] =
     useState<CaseAction | null>(null);
@@ -62,9 +171,30 @@ export function CaseActions({
   const [savingRequestStore, setSavingRequestStore] =
     useState(false);
 
+  /*
+   * ============================================================
+   * SIMPLE ACTION
+   * ============================================================
+   */
+
   async function executeSimpleAction(
     action: CaseAction,
   ) {
+    /*
+     * Segunda protección en frontend.
+     *
+     * El executor también deberá validar esto
+     * posteriormente.
+     */
+
+    if (!canExecuteAction(action)) {
+      toast.error(
+        "No tenés permisos para ejecutar esta acción.",
+      );
+
+      return;
+    }
+
     try {
       const { executeAction } =
         await import(
@@ -83,6 +213,7 @@ export function CaseActions({
           result.error ||
             "No se pudo ejecutar la acción.",
         );
+
         return;
       }
 
@@ -103,9 +234,27 @@ export function CaseActions({
     }
   }
 
+  /*
+   * ============================================================
+   * REQUEST STORE
+   * ============================================================
+   */
+
   async function handleRequestStore(
     payload: Record<string, unknown>,
   ) {
+    if (
+      !can(
+        "cases.request_store",
+      )
+    ) {
+      toast.error(
+        "No tenés permisos para solicitar stock.",
+      );
+
+      return;
+    }
+
     try {
       setSavingRequestStore(true);
 
@@ -117,7 +266,8 @@ export function CaseActions({
       const result =
         await executeAction({
           caseId: item.id,
-          action: "REQUEST_STORE",
+          action:
+            "REQUEST_STORE",
           payload,
         });
 
@@ -126,6 +276,7 @@ export function CaseActions({
           result.error ||
             "No se pudo solicitar la búsqueda.",
         );
+
         return;
       }
 
@@ -149,6 +300,17 @@ export function CaseActions({
       setSavingRequestStore(false);
     }
   }
+
+  /*
+   * ============================================================
+   * PRIORITY
+   *
+   * Por ahora no agregamos un permiso nuevo porque
+   * no existe en nuestra tabla permissions.
+   *
+   * Se mantiene el comportamiento actual.
+   * ============================================================
+   */
 
   async function handlePriorityChange(
     value: CasePriority,
@@ -176,6 +338,15 @@ export function CaseActions({
       );
     }
   }
+
+  /*
+   * ============================================================
+   * ASSIGNMENT
+   *
+   * Igual que prioridad: todavía no tenemos un permiso
+   * específico para asignación.
+   * ============================================================
+   */
 
   async function handleAssignmentChange(
     value: string,
@@ -210,17 +381,81 @@ export function CaseActions({
     }
   }
 
+  /*
+   * ============================================================
+   * ACTION PERMISSION HELPER
+   * ============================================================
+   */
+
+  function canExecuteAction(
+    action: CaseAction,
+  ) {
+    if (
+      action ===
+      "REQUEST_STORE"
+    ) {
+      return can(
+        "cases.request_store",
+      );
+    }
+
+    if (
+      action ===
+      "CANCEL_CASE"
+    ) {
+      return can(
+        "cases.cancel",
+      );
+    }
+
+    if (
+      action ===
+      "REOPEN_CASE"
+    ) {
+      return can(
+        "cases.reopen",
+      );
+    }
+
+    return can(
+      "cases.execute",
+    );
+  }
+
+  /*
+   * ============================================================
+   * HANDLE ACTION
+   * ============================================================
+   */
+
   function handleAction(
     action: CaseAction,
   ) {
     /*
-     * REQUEST_STORE tiene su propio
-     * formulario desplegable.
+     * Protección antes de abrir cualquier
+     * formulario/modal.
      */
-    if (action === "REQUEST_STORE") {
+
+    if (!canExecuteAction(action)) {
+      toast.error(
+        "No tenés permisos para ejecutar esta acción.",
+      );
+
+      return;
+    }
+
+    /*
+     * REQUEST_STORE tiene formulario propio.
+     */
+
+    if (
+      action ===
+      "REQUEST_STORE"
+    ) {
       setRequestStoreOpen(
         (current) => !current,
       );
+
       return;
     }
 
@@ -228,30 +463,32 @@ export function CaseActions({
       ACTION_REGISTRY[action];
 
     /*
-     * Las acciones que necesitan
-     * formulario se manejan con modal.
+     * OFFER_ALTERNATIVE
      */
+
     if (
       action ===
       "OFFER_ALTERNATIVE"
     ) {
       setSelectedAction(action);
+
       return;
     }
 
     /*
-     * Para acciones simples que antes
-     * utilizaban window.confirm(), usamos
-     * un toast de confirmación.
+     * Acciones con confirmación.
      */
+
     if (config.confirm) {
       toast(
         config.confirmDescription ??
           "¿Deseás ejecutar esta acción?",
         {
           duration: 6000,
+
           action: {
             label: "Confirmar",
+
             onClick: () => {
               void executeSimpleAction(
                 action,
@@ -264,112 +501,114 @@ export function CaseActions({
       return;
     }
 
+    /*
+     * Modal estándar.
+     */
+
     setSelectedAction(action);
   }
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <>
       <div className="space-y-3">
-
         {actions.length > 0 ? (
           <div className="space-y-3">
+            {actions.map(
+              (action) => {
+                const config =
+                  ACTION_REGISTRY[
+                    action
+                  ];
 
-            {actions.map((action) => {
-              const config =
-                ACTION_REGISTRY[action];
+                const Icon =
+                  config.icon;
 
-              const Icon =
-                config.icon;
+                const isRequestStore =
+                  action ===
+                  "REQUEST_STORE";
 
-              const isRequestStore =
-                action ===
-                "REQUEST_STORE";
-
-              return (
-                <div
-                  key={action}
-                  className="space-y-2"
-                >
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleAction(
-                        action,
-                      )
-                    }
-                    className={`
-                      group
-                      w-full
-                      rounded-xl
-                      border
-                      p-4
-                      text-left
-                      transition-all
-                      duration-200
-                      ${COLOR_CLASSES[config.color]}
-                    `}
+                return (
+                  <div
+                    key={action}
+                    className="space-y-2"
                   >
-
-                    <div className="flex items-start gap-4">
-
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-black/20 ring-1 ring-white/10">
-                        <Icon size={18} />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-
-                        <div className="font-medium text-white">
-                          {config.label}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAction(
+                          action,
+                        )
+                      }
+                      className={`
+                        group
+                        w-full
+                        rounded-xl
+                        border
+                        p-4
+                        text-left
+                        transition-all
+                        duration-200
+                        ${COLOR_CLASSES[config.color]}
+                      `}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-black/20 ring-1 ring-white/10">
+                          <Icon size={18} />
                         </div>
 
-                        {config.description && (
-                          <p className="mt-1 text-sm text-neutral-400">
-                            {config.description}
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-white">
+                            {config.label}
+                          </div>
+
+                          {config.description && (
+                            <p className="mt-1 text-sm text-neutral-400">
+                              {
+                                config.description
+                              }
+                            </p>
+                          )}
+                        </div>
+
+                        {isRequestStore && (
+                          <span className="text-lg text-neutral-400">
+                            {requestStoreOpen
+                              ? "−"
+                              : "+"}
+                          </span>
                         )}
-
                       </div>
+                    </button>
 
-                      {isRequestStore && (
-                        <span className="text-lg text-neutral-400">
-                          {requestStoreOpen
-                            ? "−"
-                            : "+"}
-                        </span>
+                    {isRequestStore &&
+                      requestStoreOpen && (
+                        <div className="rounded-xl border border-border bg-background p-4">
+                          <RequestStoreForm
+                            loading={
+                              savingRequestStore
+                            }
+                            onSubmit={
+                              handleRequestStore
+                            }
+                          />
+                        </div>
                       )}
-
-                    </div>
-
-                  </button>
-
-                  {isRequestStore &&
-                    requestStoreOpen && (
-                      <div className="rounded-xl border border-border bg-background p-4">
-
-                        <RequestStoreForm
-                          loading={
-                            savingRequestStore
-                          }
-                          onSubmit={
-                            handleRequestStore
-                          }
-                        />
-
-                      </div>
-                    )}
-
-                </div>
-              );
-            })}
-
+                  </div>
+                );
+              },
+            )}
           </div>
         ) : (
           <div className="rounded-lg border border-dashed p-4 text-sm text-neutral-500">
             No hay acciones disponibles.
           </div>
         )}
-
       </div>
 
       {selectedAction && (
