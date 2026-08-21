@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+
 import { ChevronDown } from "lucide-react";
+
+import { AssigneeSelect } from "./AssigneeSelect";
 
 interface Props {
   loading: boolean;
@@ -40,6 +43,9 @@ export function RequestStoreForm({
   const [storeId, setStoreId] =
     useState("");
 
+  const [assignedTo, setAssignedTo] =
+    useState("");
+
   const [comment, setComment] =
     useState("");
 
@@ -57,12 +63,13 @@ export function RequestStoreForm({
   ) {
     event.preventDefault();
 
-    if (!storeId) {
+    if (!storeId || !assignedTo) {
       return;
     }
 
     await onSubmit({
       storeId,
+      assignedTo,
       comment: comment.trim(),
     });
   }
@@ -84,6 +91,9 @@ export function RequestStoreForm({
       <div className="relative">
         <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Sucursal
+          <span className="ml-1 text-destructive">
+            *
+          </span>
         </label>
 
         <button
@@ -147,6 +157,16 @@ export function RequestStoreForm({
         )}
       </div>
 
+      {/* RESPONSABLE */}
+
+      <AssigneeSelect
+        role="DEPOT"
+        value={assignedTo}
+        onChange={setAssignedTo}
+        loading={loading}
+        required
+      />
+
       {/* COMENTARIO */}
 
       <div>
@@ -182,7 +202,8 @@ export function RequestStoreForm({
           type="submit"
           disabled={
             loading ||
-            !storeId
+            !storeId ||
+            !assignedTo
           }
           className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
