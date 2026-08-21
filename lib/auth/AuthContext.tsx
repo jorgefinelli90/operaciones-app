@@ -17,25 +17,15 @@ import type { CurrentUser } from "@/lib/auth/types";
 
 interface AuthContextValue {
   user: CurrentUser | null;
+
   loading: boolean;
 
-  /**
-   * Comprueba si el usuario puede ejecutar
-   * una determinada acción.
-   *
-   * ADMIN siempre devuelve true.
-   */
-  can: (permission: string) => boolean;
+  can: (
+    permission: string,
+  ) => boolean;
 
-  /**
-   * Recarga el usuario y sus permisos
-   * desde Supabase.
-   */
   refreshUser: () => Promise<void>;
 
-  /**
-   * Cierra la sesión actual.
-   */
   signOut: () => Promise<void>;
 }
 
@@ -50,14 +40,16 @@ export function AuthProvider({
   children: React.ReactNode;
 }) {
   const [user, setUser] =
-    useState<CurrentUser | null>(null);
+    useState<CurrentUser | null>(
+      null,
+    );
 
   const [loading, setLoading] =
     useState(true);
 
   /*
    * ============================================================
-   * CARGAR / RECARGAR USUARIO
+   * REFRESH USER
    * ============================================================
    */
 
@@ -80,7 +72,7 @@ export function AuthProvider({
 
   /*
    * ============================================================
-   * INICIALIZACIÓN
+   * INITIALIZE
    * ============================================================
    */
 
@@ -89,6 +81,41 @@ export function AuthProvider({
 
     async function initialize() {
       try {
+        /*
+         * Primero comprobamos si existe
+         * una sesión.
+         */
+
+        const {
+          data: {
+            session,
+          },
+        } =
+          await supabase.auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        /*
+         * ------------------------------------------------------
+         * NO HAY SESIÓN
+         * ------------------------------------------------------
+         */
+
+        if (!session) {
+          setUser(null);
+          setLoading(false);
+
+          return;
+        }
+
+        /*
+         * ------------------------------------------------------
+         * HAY SESIÓN
+         * ------------------------------------------------------
+         */
+
         const currentUser =
           await getCurrentUser();
 
@@ -117,7 +144,7 @@ export function AuthProvider({
 
     /*
      * ========================================================
-     * ESCUCHAR CAMBIOS DE AUTH
+     * AUTH STATE CHANGE
      * ========================================================
      */
 
@@ -127,13 +154,11 @@ export function AuthProvider({
       },
     } =
       supabase.auth.onAuthStateChange(
-        async (event) => {
-          if (!mounted) {
-            return;
-          }
-
+        (event) => {
           /*
-           * LOGOUT
+           * ----------------------------------------------------
+           * SIGNED OUT
+           * ----------------------------------------------------
            */
 
           if (
@@ -142,11 +167,17 @@ export function AuthProvider({
           ) {
             setUser(null);
             setLoading(false);
+
             return;
           }
 
           /*
-           * LOGIN
+           * ----------------------------------------------------
+           * SIGNED IN
+           *
+           * No hacemos await directamente
+           * dentro del callback de Supabase.
+           * ----------------------------------------------------
            */
 
           if (
@@ -155,22 +186,23 @@ export function AuthProvider({
           ) {
             setLoading(true);
 
-            await refreshUser();
-
-            if (mounted) {
-              setLoading(false);
-            }
+            setTimeout(() => {
+              void refreshUser().finally(
+                () => {
+                  setLoading(false);
+                },
+              );
+            }, 0);
 
             return;
           }
 
           /*
-           * REFRESH DEL TOKEN
+           * ----------------------------------------------------
+           * TOKEN REFRESHED
            *
-           * No necesitamos volver a consultar
-           * constantemente el profile.
-           *
-           * El usuario actual sigue siendo válido.
+           * No necesitamos volver a cargar profile.
+           * ----------------------------------------------------
            */
 
           if (
@@ -182,6 +214,12 @@ export function AuthProvider({
         },
       );
 
+    /*
+     * ========================================================
+     * CLEANUP
+     * ========================================================
+     */
+
     return () => {
       mounted = false;
 
@@ -191,7 +229,7 @@ export function AuthProvider({
 
   /*
    * ============================================================
-   * PERMISOS
+   * PERMISSIONS
    * ============================================================
    */
 
@@ -208,7 +246,7 @@ export function AuthProvider({
 
   /*
    * ============================================================
-   * LOGOUT
+   * SIGN OUT
    * ============================================================
    */
 

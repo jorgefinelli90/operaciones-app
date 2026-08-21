@@ -1,174 +1,416 @@
-'use client'
+"use client";
 
-import { Sidebar } from '@/components/sidebar'
-import { TopBar } from '@/components/topbar'
-import { Plus, Edit2, Trash2, Filter } from 'lucide-react'
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
-const users = [
-  {
-    id: 1,
-    name: 'Bruno Menardo',
-    email: 'bruno@elburgues.com',
-    role: 'Manager',
-    status: 'active',
-    lastLogin: '2024-01-15 14:32',
-  },
-  {
-    id: 2,
-    name: 'Nestor Bazan',
-    email: 'deposito@elburgues.com',
-    role: 'deposito',
-    status: 'active',
-    lastLogin: '2024-01-15 13:45',
-  },
-  {
-    id: 3,
-    name: 'Yohanna Apodaca',
-    email: 'yohanna@elburgues.com',
-    role: 'Atencion al cliente',
-    status: 'active',
-    lastLogin: '2024-01-15 15:20',
-  },
-  {
-    id: 4,
-    name: 'Roberto Diaz',
-    email: 'roberto@elburgues.com',
-    role: 'deposito',
-    status: 'active',
-    lastLogin: '2024-01-14 09:15',
-  },
-  {
-    id: 5,
-    name: 'Soledad Rocha',
-    email: 'soledad@elburgues.com',
-    role: 'Administrador',
-    status: 'active',
-    lastLogin: '2024-01-15 10:00',
-  },
-  {
-    id: 6,
-    name: 'Jorge Finelli',
-    email: 'jorge@elburgues.com',
-    role: 'Administrator',
-    status: 'active',
-    lastLogin: '2024-01-15 08:30',
-  },
-]
+import {
+  useRouter,
+} from "next/navigation";
 
-const roleColors = {
-  deposito: 'bg-blue-500/10 text-blue-400',
-  'Atencion al cliente': 'bg-purple-500/10 text-purple-400',
-  Manager: 'bg-orange-500/10 text-orange-400',
-  Administrator: 'bg-red-500/10 text-red-400',
-}
+import {
+  Sidebar,
+} from "@/components/sidebar";
 
-const permissions = {
-  deposito: ['Ver Pedidos', 'Gestionar Almacén', 'Ver Reportes'],
-  'Atencion al cliente': ['Ver Pedidos', 'Gestionar Tareas', 'Crear Notas de Crédito', 'Ver Reportes'],
-  Manager: ['Acceso Completo', 'Gestionar Usuarios', 'Ver Reportes', 'Gestionar Configuración'],
-  Administrator: ['Acceso Completo', 'Configuración del Sistema', 'Gestión de Usuarios'],
-}
+import {
+  TopBar,
+} from "@/components/topbar";
+
+import {
+  useAuth,
+} from "@/lib/auth/AuthContext";
+
+import {
+  getUsers,
+} from "@/lib/users/repository";
+
+import type {
+  UserProfile,
+} from "@/lib/users/types";
 
 export default function UsersPage() {
+  const router = useRouter();
+
+  const {
+    user,
+    loading: authLoading,
+    can,
+  } = useAuth();
+
+  const [
+    users,
+    setUsers,
+  ] = useState<UserProfile[]>([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(
+    null,
+  );
+
+  /*
+   * ============================================================
+   * LOAD USERS
+   * ============================================================
+   */
+
+  const loadUsers =
+    useCallback(async () => {
+      if (!can("users.manage")) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data =
+          await getUsers();
+
+        setUsers(data);
+      } catch (error) {
+        console.error(
+          "Error cargando usuarios:",
+          error,
+        );
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar los usuarios.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, [can]);
+
+  /*
+   * ============================================================
+   * PROTECCIÓN
+   * ============================================================
+   */
+
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (
+      !user ||
+      !user.active
+    ) {
+      router.replace("/login");
+      return;
+    }
+
+    if (
+      !can("users.manage")
+    ) {
+      router.replace(
+        "/dashboard",
+      );
+
+      return;
+    }
+
+    void loadUsers();
+  }, [
+    authLoading,
+    user,
+    can,
+    router,
+    loadUsers,
+  ]);
+
+  /*
+   * ============================================================
+   * AUTH LOADING
+   * ============================================================
+   */
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+
+          <span className="text-sm text-muted-foreground">
+            Verificando permisos...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  /*
+   * ============================================================
+   * ACCESS DENIED
+   * ============================================================
+   */
+
+  if (
+    !user ||
+    !user.active ||
+    !can("users.manage")
+  ) {
+    return null;
+  }
+
+  /*
+   * ============================================================
+   * PAGE
+   * ============================================================
+   */
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
+
       <TopBar />
 
-      {/* Main Content */}
       <main className="ml-64 mt-16 p-6">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* ==================================================
+            HEADER
+            ================================================== */}
+
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Usuarios</h1>
-            <p className="text-muted-foreground mt-1">Gestiona miembros del equipo y permisos</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Usuarios
+            </h1>
+
+            <p className="mt-1 text-muted-foreground">
+              Administración de usuarios y permisos.
+            </p>
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 hover:bg-secondary transition-colors text-sm font-medium">
-              <Filter className="h-4 w-4" />
-              Filtro
-            </button>
-            <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium">
-              <Plus className="h-4 w-4" />
-              Agregar Usuario
-            </button>
-          </div>
+
+          <button
+            type="button"
+            disabled
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
+          >
+            + Nuevo usuario
+          </button>
         </div>
 
-        {/* Users Table */}
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          {/* Header */}
-          <div className="sticky top-0 bg-secondary/50 border-b border-border">
-            <div className="grid grid-cols-6 gap-4 px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <div className="col-span-2">Nombre</div>
-              <div className="col-span-1">Rol</div>
-              <div className="col-span-1">Estado</div>
-              <div className="col-span-1">Último Acceso</div>
-              <div className="col-span-1">Acciones</div>
+        {/* ==================================================
+            ERROR
+            ================================================== */}
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* ==================================================
+            TABLE
+            ================================================== */}
+
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          {loading ? (
+            <div className="flex min-h-64 items-center justify-center">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+
+                Cargando usuarios...
+              </div>
             </div>
-          </div>
+          ) : users.length === 0 ? (
+            <div className="flex min-h-64 items-center justify-center">
+              <div className="text-center">
+                <p className="font-medium text-foreground">
+                  No hay usuarios
+                </p>
 
-          {/* Rows */}
-          <div className="divide-y divide-border">
-            {users.map((user) => (
-              <div
-                key={user.id}
-                className="grid grid-cols-6 gap-4 px-6 py-4 hover:bg-secondary/30 transition-colors items-center"
-              >
-                <div className="col-span-2">
-                  <div>
-                    <p className="font-semibold text-foreground">{user.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
-                  </div>
-                </div>
-                <div className="col-span-1">
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${roleColors[user.role as keyof typeof roleColors]}`}>
-                    {user.role}
-                  </span>
-                </div>
-                <div className="col-span-1">
-                  <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-green-500/10 text-green-400">
-                    {user.status.toUpperCase()}
-                  </span>
-                </div>
-                <div className="col-span-1">
-                  <span className="text-sm text-muted-foreground">{user.lastLogin}</span>
-                </div>
-                <div className="col-span-1 flex gap-2">
-                  <button className="p-2 hover:bg-primary/10 rounded transition-colors">
-                    <Edit2 className="h-4 w-4 text-primary" />
-                  </button>
-                  <button className="p-2 hover:bg-red-500/10 rounded transition-colors">
-                    <Trash2 className="h-4 w-4 text-red-400" />
-                  </button>
-                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  No se encontraron usuarios registrados.
+                </p>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="px-5 py-3 text-left font-medium text-muted-foreground">
+                      Usuario
+                    </th>
+
+                    <th className="px-5 py-3 text-left font-medium text-muted-foreground">
+                      Email
+                    </th>
+
+                    <th className="px-5 py-3 text-left font-medium text-muted-foreground">
+                      Rol
+                    </th>
+
+                    <th className="px-5 py-3 text-left font-medium text-muted-foreground">
+                      Estado
+                    </th>
+
+                    <th className="px-5 py-3 text-left font-medium text-muted-foreground">
+                      Alta
+                    </th>
+
+                    <th className="px-5 py-3 text-right font-medium text-muted-foreground">
+                      Acción
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {users.map(
+                    (item) => {
+                      const initials =
+                        item.name
+                          .trim()
+                          .split(
+                            /\s+/,
+                          )
+                          .slice(
+                            0,
+                            2,
+                          )
+                          .map(
+                            (
+                              part,
+                            ) =>
+                              part
+                                .charAt(
+                                  0,
+                                )
+                                .toUpperCase(),
+                          )
+                          .join("");
+
+                      const createdAt =
+                        new Date(
+                          item.created_at,
+                        ).toLocaleDateString(
+                          "es-AR",
+                        );
+
+                      return (
+                        <tr
+                          key={
+                            item.id
+                          }
+                          className="border-b border-border last:border-0 hover:bg-muted/20"
+                        >
+                          {/* USUARIO */}
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                {
+                                  initials
+                                }
+                              </div>
+
+                              <span className="font-medium text-foreground">
+                                {
+                                  item.name
+                                }
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* EMAIL */}
+
+                          <td className="px-5 py-4 text-muted-foreground">
+                            {
+                              item.email
+                            }
+                          </td>
+
+                          {/* ROL */}
+
+                          <td className="px-5 py-4">
+                            <span className="inline-flex rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                              {
+                                item
+                                  .role
+                                  .name
+                              }
+                            </span>
+                          </td>
+
+                          {/* ESTADO */}
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex items-center gap-2 text-xs font-medium ${
+                                item.active
+                                  ? "text-emerald-600"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              <span
+                                className={`h-2 w-2 rounded-full ${
+                                  item.active
+                                    ? "bg-emerald-500"
+                                    : "bg-muted-foreground"
+                                }`}
+                              />
+
+                              {item.active
+                                ? "Activo"
+                                : "Inactivo"}
+                            </span>
+                          </td>
+
+                          {/* FECHA */}
+
+                          <td className="px-5 py-4 text-muted-foreground">
+                            {
+                              createdAt
+                            }
+                          </td>
+
+                          {/* ACCIÓN */}
+
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              type="button"
+                              disabled
+                              className="text-sm font-medium text-muted-foreground opacity-50"
+                            >
+                              Editar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    },
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        {/* Roles & Permissions */}
-        <div className="mt-8">
-          <h2 className="text-lg font-bold text-foreground mb-4">Roles & Permissions</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {Object.entries(permissions).map(([role, perms]) => (
-              <div key={role} className="rounded-lg border border-border bg-card p-6">
-                <h3 className={`text-sm font-semibold px-2 py-1 rounded w-fit mb-4 ${roleColors[role as keyof typeof roleColors]}`}>
-                  {role}
-                </h3>
-                <ul className="space-y-2">
-                  {perms.map((perm, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm text-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      {perm}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* ==================================================
+            FOOTER
+            ================================================== */}
+
+        {!loading &&
+          users.length > 0 && (
+            <div className="mt-3 text-xs text-muted-foreground">
+              {users.length}{" "}
+              {users.length === 1
+                ? "usuario"
+                : "usuarios"}
+            </div>
+          )}
       </main>
     </div>
-  )
+  );
 }

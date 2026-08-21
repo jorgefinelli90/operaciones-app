@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-} from "react";
-
+import { useEffect } from "react";
 import {
   usePathname,
   useRouter,
@@ -24,6 +21,12 @@ export function AuthGuard({
     loading,
   } = useAuth();
 
+  /*
+   * ============================================================
+   * ROUTING
+   * ============================================================
+   */
+
   useEffect(() => {
     if (loading) {
       return;
@@ -36,9 +39,20 @@ export function AuthGuard({
      */
 
     if (!user) {
-      if (pathname !== "/login") {
-        router.replace("/login");
+      /*
+       * IMPORTANTE:
+       *
+       * /login es una ruta pública.
+       *
+       * Si no hay usuario y estamos en login,
+       * simplemente dejamos renderizar la página.
+       */
+
+      if (pathname === "/login") {
+        return;
       }
+
+      router.replace("/login");
 
       return;
     }
@@ -74,9 +88,9 @@ export function AuthGuard({
   ]);
 
   /*
-   * ==========================================================
+   * ============================================================
    * LOADING
-   * ==========================================================
+   * ============================================================
    */
 
   if (loading) {
@@ -94,17 +108,45 @@ export function AuthGuard({
   }
 
   /*
-   * ==========================================================
-   * SIN USUARIO
+   * ============================================================
+   * LOGIN SIN USUARIO
    *
-   * Mientras router.replace() hace la navegación,
-   * no mostramos información protegida.
-   * ==========================================================
+   * ESTA ES LA EXCEPCIÓN IMPORTANTE.
+   * ============================================================
    */
 
-  if (!user || !user.active) {
+  if (
+    pathname === "/login" &&
+    !user
+  ) {
+    return <>{children}</>;
+  }
+
+  /*
+   * ============================================================
+   * SIN USUARIO EN RUTA PRIVADA
+   * ============================================================
+   */
+
+  if (!user) {
     return null;
   }
+
+  /*
+   * ============================================================
+   * USUARIO DESACTIVADO
+   * ============================================================
+   */
+
+  if (!user.active) {
+    return null;
+  }
+
+  /*
+   * ============================================================
+   * TODO OK
+   * ============================================================
+   */
 
   return <>{children}</>;
 }
