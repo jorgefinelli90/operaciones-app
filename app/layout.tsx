@@ -5,13 +5,15 @@ import type {
 } from "next";
 import { Toaster } from "sonner";
 
+import { AuthProvider } from "@/components/auth/AuthProvider";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "BURGUES Operaciones",
   description:
-    "Plataforma de gestión de operaciones de comercio electrónico",
-  generator: "v0.app",
+    "Plataforma de gestión de operaciones de E-commerce",
+  generator: "Jorge",
   icons: {
     icon: "/icon.svg",
   },
@@ -43,7 +45,9 @@ export default function RootLayout({
         className="antialiased bg-background text-foreground"
         suppressHydrationWarning
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
 
         <Toaster
           position="bottom-right"

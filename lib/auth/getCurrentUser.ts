@@ -1,27 +1,49 @@
 import { supabase } from "@/lib/supabase/client";
-import type { CurrentUser, UserRole } from "./types";
+import type {
+  CurrentUser,
+  UserRole,
+} from "./types";
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  // 1. Obtener usuario autenticado
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  /*
+   * ============================================================
+   * 1. OBTENER SESIÓN
+   *
+   * Si no existe sesión:
+   *
+   * session === null
+   *
+   * Esto es un estado normal, no un error.
+   * ============================================================
+   */
 
-  if (authError) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
     console.error(
-      "Error obteniendo usuario autenticado:",
-      authError,
+      "Error obteniendo sesión:",
+      sessionError,
     );
 
     return null;
   }
 
-  if (!user) {
+  if (!session?.user) {
     return null;
   }
 
-  // 2. Obtener perfil + rol
+  const authUser =
+    session.user;
+
+  /*
+   * ============================================================
+   * 2. OBTENER PERFIL + ROL
+   * ============================================================
+   */
+
   const {
     data: profile,
     error: profileError,
@@ -39,7 +61,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
         )
       `,
     )
-    .eq("id", user.id)
+    .eq("id", authUser.id)
     .maybeSingle();
 
   if (profileError) {
@@ -51,30 +73,48 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     return null;
   }
 
+  /*
+   * Auth existe pero no existe profile.
+   */
+
   if (!profile) {
     console.error(
-      "El usuario autenticado no tiene un perfil.",
+      `El usuario ${authUser.email ?? authUser.id} no tiene un perfil en profiles.`,
     );
 
     return null;
   }
 
-  // 3. Obtener código del rol
-  const roleData = Array.isArray(profile.roles)
-    ? profile.roles[0]
-    : profile.roles;
+  /*
+   * ============================================================
+   * 3. OBTENER ROL
+   * ============================================================
+   */
 
-  const role = roleData?.code as UserRole | undefined;
+  const roleData =
+    Array.isArray(profile.roles)
+      ? profile.roles[0]
+      : profile.roles;
+
+  const role =
+    roleData?.code as
+      | UserRole
+      | undefined;
 
   if (!role) {
     console.error(
-      "El perfil no tiene un rol válido.",
+      `El usuario ${profile.email} no tiene un rol válido.`,
     );
 
     return null;
   }
 
-  // 4. Usuario desactivado
+  /*
+   * ============================================================
+   * 4. USUARIO DESACTIVADO
+   * ============================================================
+   */
+
   if (!profile.active) {
     return {
       id: profile.id,
@@ -86,7 +126,33 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     };
   }
 
-  // 5. Obtener permisos del rol
+  /*
+   * ============================================================
+   * 5. ADMIN
+   *
+   * ADMIN tiene bypass total.
+   *
+   * No necesitamos consultar permissions.
+   * ============================================================
+   */
+
+  if (role === "ADMIN") {
+    return {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      role,
+      active: true,
+      permissions: [],
+    };
+  }
+
+  /*
+   * ============================================================
+   * 6. PERMISOS DEL ROL
+   * ============================================================
+   */
+
   const {
     data: rolePermissions,
     error: permissionsError,
@@ -99,7 +165,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
         )
       `,
     )
-    .eq("role_id", profile.role_id);
+    .eq(
+      "role_id",
+      profile.role_id,
+    );
 
   if (permissionsError) {
     console.error(
@@ -110,15 +179,21 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     return null;
   }
 
-  // 6. Convertir permisos a string[]
+  /*
+   * ============================================================
+   * 7. NORMALIZAR PERMISOS
+   * ============================================================
+   */
+
   const permissions =
     rolePermissions
       ?.map((item) => {
-        const permission = Array.isArray(
-          item.permissions,
-        )
-          ? item.permissions[0]
-          : item.permissions;
+        const permission =
+          Array.isArray(
+            item.permissions,
+          )
+            ? item.permissions[0]
+            : item.permissions;
 
         return permission?.code ?? null;
       })
@@ -129,38 +204,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
           permission !== null,
       ) ?? [];
 
-  // 7. ADMIN tiene todos los permisos
-  if (role === "ADMIN") {
-    const {
-      data: allPermissions,
-      error: allPermissionsError,
-    } = await supabase
-      .from("permissions")
-      .select("code");
+  /*
+   * ============================================================
+   * 8. RESULTADO
+   * ============================================================
+   */
 
-    if (allPermissionsError) {
-      console.error(
-        "Error obteniendo permisos de ADMIN:",
-        allPermissionsError,
-      );
-
-      return null;
-    }
-
-    return {
-      id: profile.id,
-      email: profile.email,
-      name: profile.name,
-      role,
-      active: true,
-      permissions:
-        allPermissions?.map(
-          (permission) => permission.code,
-        ) ?? [],
-    };
-  }
-
-  // 8. Usuario normal
   return {
     id: profile.id,
     email: profile.email,
