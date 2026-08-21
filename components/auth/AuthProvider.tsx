@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  AuthProvider as AuthContextProvider,
+} from "@/lib/auth/AuthContext";
+
 import { AuthGuard } from "./AuthGuard";
 
 export function AuthProvider({
@@ -8,8 +12,10 @@ export function AuthProvider({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard>
-      {children}
-    </AuthGuard>
+    <AuthContextProvider>
+      <AuthGuard>
+        {children}
+      </AuthGuard>
+    </AuthContextProvider>
   );
 }

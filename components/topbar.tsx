@@ -6,19 +6,38 @@ import {
   LogOut,
   User,
 } from "lucide-react";
+
 import {
   useEffect,
   useRef,
   useState,
 } from "react";
 
-import { getCurrentUser } from "@/lib/auth/getCurrentUser";
-import { signOut } from "@/lib/auth/signOut";
-import type { CurrentUser } from "@/lib/auth/types";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export function TopBar() {
-  const [user, setUser] =
-    useState<CurrentUser | null>(null);
+  /*
+   * ============================================================
+   * AUTH
+   * ============================================================
+   *
+   * El usuario ya viene del AuthContext.
+   *
+   * NO hacemos getCurrentUser() acá.
+   * NO hacemos otra consulta a Supabase.
+   */
+
+  const {
+    user,
+    loading,
+    signOut,
+  } = useAuth();
+
+  /*
+   * ============================================================
+   * MENU
+   * ============================================================
+   */
 
   const [menuOpen, setMenuOpen] =
     useState(false);
@@ -28,31 +47,6 @@ export function TopBar() {
 
   const menuRef =
     useRef<HTMLDivElement>(null);
-
-  /*
-   * ============================================================
-   * CARGAR USUARIO AUTENTICADO
-   * ============================================================
-   */
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadUser() {
-      const currentUser =
-        await getCurrentUser();
-
-      if (mounted) {
-        setUser(currentUser);
-      }
-    }
-
-    loadUser();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   /*
    * ============================================================
@@ -91,7 +85,7 @@ export function TopBar() {
 
   /*
    * ============================================================
-   * ESC PARA CERRAR MENU
+   * ESC PARA CERRAR
    * ============================================================
    */
 
@@ -147,7 +141,23 @@ export function TopBar() {
 
   /*
    * ============================================================
-   * DATOS VISUALES
+   * LOADING
+   * ============================================================
+   */
+
+  if (loading) {
+    return (
+      <header className="fixed top-0 right-0 left-64 z-40 border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="flex w-full items-center justify-end px-6 py-3">
+          <div className="h-10 w-32 animate-pulse rounded-lg bg-secondary" />
+        </div>
+      </header>
+    );
+  }
+
+  /*
+   * ============================================================
+   * DATOS DEL USUARIO
    * ============================================================
    */
 
@@ -158,6 +168,12 @@ export function TopBar() {
 
   const email =
     user?.email || "";
+
+  /*
+   * ============================================================
+   * INICIALES
+   * ============================================================
+   */
 
   const initials =
     user?.name
@@ -174,6 +190,12 @@ export function TopBar() {
       .toUpperCase() ||
     "U";
 
+  /*
+   * ============================================================
+   * LABEL DEL ROL
+   * ============================================================
+   */
+
   const roleLabel =
     user?.role === "ADMIN"
       ? "Administrador"
@@ -186,6 +208,12 @@ export function TopBar() {
               "ADMINISTRATION"
             ? "Administración"
             : "Usuario";
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <header className="fixed top-0 right-0 left-64 z-40 border-b border-border bg-card/50 backdrop-blur-sm">
@@ -201,6 +229,9 @@ export function TopBar() {
             className="relative rounded-lg p-2 transition-colors hover:bg-secondary"
           >
             <Bell className="h-5 w-5 text-foreground" />
+
+            {/* Badge temporal.
+                Después lo conectamos con notifications. */}
 
             <span
               aria-hidden="true"
@@ -267,9 +298,13 @@ export function TopBar() {
 
                 <div className="border-b border-border px-4 py-3">
                   <div className="flex items-center gap-3">
+                    {/* AVATAR GRANDE */}
+
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                       {initials}
                     </div>
+
+                    {/* DATOS */}
 
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-foreground">
@@ -287,9 +322,11 @@ export function TopBar() {
                   </div>
                 </div>
 
-                {/* PROFILE */}
+                {/* ACTIONS */}
 
                 <div className="p-1">
+                  {/* PERFIL */}
+
                   <button
                     type="button"
                     role="menuitem"

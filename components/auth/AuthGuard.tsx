@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useState,
 } from "react";
 
 import {
@@ -10,8 +9,7 @@ import {
   useRouter,
 } from "next/navigation";
 
-import { supabase } from "@/lib/supabase/client";
-import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export function AuthGuard({
   children,
@@ -21,147 +19,67 @@ export function AuthGuard({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [checking, setChecking] =
-    useState(true);
+  const {
+    user,
+    loading,
+  } = useAuth();
 
   useEffect(() => {
-    let mounted = true;
-
-    async function checkAuth() {
-      /*
-       * ========================================================
-       * 1. PRIMERO: ¿HAY SESIÓN?
-       * ========================================================
-       */
-
-      const {
-        data: {
-          session,
-        },
-      } =
-        await supabase.auth.getSession();
-
-      if (!mounted) {
-        return;
-      }
-
-      /*
-       * ========================================================
-       * 2. SIN SESIÓN
-       * ========================================================
-       */
-
-      if (!session) {
-        if (pathname !== "/login") {
-          router.replace("/login");
-          return;
-        }
-
-        setChecking(false);
-        return;
-      }
-
-      /*
-       * ========================================================
-       * 3. HAY SESIÓN → CARGAR PROFILE
-       * ========================================================
-       */
-
-      const user =
-        await getCurrentUser();
-
-      if (!mounted) {
-        return;
-      }
-
-      /*
-       * Auth existe pero profile no.
-       */
-
-      if (!user) {
-        await supabase.auth.signOut();
-
-        router.replace("/login");
-        return;
-      }
-
-      /*
-       * ========================================================
-       * 4. USUARIO DESACTIVADO
-       * ========================================================
-       */
-
-      if (!user.active) {
-        await supabase.auth.signOut();
-
-        router.replace("/login");
-        return;
-      }
-
-      /*
-       * ========================================================
-       * 5. YA LOGUEADO → NO MOSTRAR LOGIN
-       * ========================================================
-       */
-
-      if (pathname === "/login") {
-        router.replace("/dashboard");
-        return;
-      }
-
-      /*
-       * ========================================================
-       * 6. TODO OK
-       * ========================================================
-       */
-
-      setChecking(false);
+    if (loading) {
+      return;
     }
 
-    checkAuth();
-
     /*
-     * ==========================================================
-     * CAMBIOS DE SESIÓN
-     * ==========================================================
+     * ========================================================
+     * SIN USUARIO
+     * ========================================================
      */
 
-    const {
-      data: {
-        subscription,
-      },
-    } =
-      supabase.auth.onAuthStateChange(
-        (event) => {
-          if (!mounted) {
-            return;
-          }
+    if (!user) {
+      if (pathname !== "/login") {
+        router.replace("/login");
+      }
 
-          if (
-            event ===
-            "SIGNED_OUT"
-          ) {
-            router.replace("/login");
-          }
-        },
-      );
+      return;
+    }
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    /*
+     * ========================================================
+     * USUARIO DESACTIVADO
+     * ========================================================
+     */
+
+    if (!user.active) {
+      if (pathname !== "/login") {
+        router.replace("/login");
+      }
+
+      return;
+    }
+
+    /*
+     * ========================================================
+     * USUARIO AUTENTICADO EN LOGIN
+     * ========================================================
+     */
+
+    if (pathname === "/login") {
+      router.replace("/dashboard");
+    }
   }, [
+    user,
+    loading,
     pathname,
     router,
   ]);
 
   /*
-   * ============================================================
+   * ==========================================================
    * LOADING
-   * ============================================================
+   * ==========================================================
    */
 
-  if (checking) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -173,6 +91,19 @@ export function AuthGuard({
         </div>
       </div>
     );
+  }
+
+  /*
+   * ==========================================================
+   * SIN USUARIO
+   *
+   * Mientras router.replace() hace la navegación,
+   * no mostramos información protegida.
+   * ==========================================================
+   */
+
+  if (!user || !user.active) {
+    return null;
   }
 
   return <>{children}</>;
